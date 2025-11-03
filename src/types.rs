@@ -52,6 +52,18 @@ impl OperationResult {
             errors: vec![error],
         }
     }
+
+    pub fn add_change(&mut self, change: String) {
+        self.changes.push(change);
+    }
+
+    pub fn add_warning(&mut self, warning: String) {
+        self.warnings.push(warning);
+    }
+
+    pub fn has_warnings(&self) -> bool {
+        !self.warnings.is_empty()
+    }
 }
 
 /// Wrapper for Git command execution
@@ -62,4 +74,25 @@ pub struct GitCommand {
     pub timeout: Duration,
     pub output: String,
     pub error: Option<CliError>,
+}
+
+impl GitCommand {
+    pub fn new(args: Vec<String>, working_dir: PathBuf) -> Self {
+        Self {
+            args,
+            working_dir,
+            timeout: crate::config::default_timeout(),
+            output: String::new(),
+            error: None,
+        }
+    }
+
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn is_success(&self) -> bool {
+        self.error.is_none()
+    }
 }
