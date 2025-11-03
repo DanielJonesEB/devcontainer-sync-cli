@@ -49,7 +49,6 @@ The tool eliminates the need to manually execute these multiple Git commands by 
 
 1. THE CLI Tool SHALL be implemented as a single executable binary
 2. THE CLI Tool SHALL execute all Git operations within 30 seconds on a standard development machine
-3. THE CLI Tool SHALL work on Linux, macOS, and Windows operating systems
 4. THE CLI Tool SHALL require only Git as an external dependency
 5. THE CLI Tool SHALL provide clear progress indicators during execution
 

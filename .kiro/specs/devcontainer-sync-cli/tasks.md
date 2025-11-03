@@ -5,7 +5,7 @@
   - Set up basic CLI structure with main.rs and lib.rs
   - Define project module structure (cli, git, error, config modules)
   - **Expected test results: 0/15 acceptance tests pass (binary doesn't exist yet)**
-  - _Requirements: 2.1, 2.3_
+  - _Requirements: 2.1_
 
 - [x] 2. Create acceptance test fixtures and write failing tests
   - [x] 2.1 Create test fixtures and helpers
@@ -144,13 +144,7 @@
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 10. Finalize implementation and add advanced features
-  - [ ] 10.1 Implement configuration management
-    - Create config module for managing application settings
-    - Add environment variable support for customization
-    - Implement validation for configuration values
-    - _Requirements: 2.3, 2.4_
-
-  - [ ] 10.2 Add progress reporting and user experience features
+  - [ ] 10.1 Add progress reporting and user experience features
     - Implement progress indicators for long-running operations (Requirements: 2.5)
     - Add verbose logging options for debugging (Requirements: 4.5)
     - Create clear success and error messaging (Requirements: 4.4)
@@ -158,7 +152,7 @@
     - Display summary of changes made when operations complete successfully (Requirements: 4.4)
     - _Requirements: 2.5, 4.4, 4.5, 4.6_
 
-  - [ ] 10.3 Performance optimization and final testing
+  - [ ] 10.2 Performance optimization and final testing
     - Optimize git command execution for speed
     - Add timeout handling for network operations
     - Run full end-to-end testing suite
