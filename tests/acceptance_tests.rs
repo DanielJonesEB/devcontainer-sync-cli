@@ -405,6 +405,119 @@ fn should_show_verbose_output_for_remove_command(
 }
 
 // ============================================================================
+// UPDATE BACKUP FEATURE TESTS
+// ============================================================================
+
+#[rstest]
+fn should_create_backup_when_backup_flag_is_used(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Verify .devcontainer exists
+    assert_that(&repo_path.join(".devcontainer").exists()).is_true();
+
+    // Modify a file in .devcontainer to test backup
+    let devcontainer_json = repo_path.join(".devcontainer").join("devcontainer.json");
+    if devcontainer_json.exists() {
+        std::fs::write(&devcontainer_json, r#"{"name": "modified-for-test"}"#)
+            .expect("Failed to modify devcontainer.json");
+    }
+
+    // Run update with backup flag
+    let update_result = run_command(&compiled_binary, &["update", "--backup"], &repo_path);
+    update_result.should_succeed();
+    update_result.should_contain_in_stdout("Backup created before update");
+
+    // Check that backup directory was created
+    let backup_dir = repo_path.join(".devcontainer.backup");
+    assert_that(&backup_dir.exists()).is_true();
+
+    // Verify backup contains the modified file
+    let backup_json = backup_dir.join("devcontainer.json");
+    if backup_json.exists() {
+        let backup_content = std::fs::read_to_string(&backup_json)
+            .expect("Failed to read backup file");
+        assert_that(&backup_content).contains("modified-for-test");
+    }
+}
+
+#[rstest]
+fn should_show_backup_message_in_verbose_mode(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Run update with backup and verbose flags
+    let update_result = run_command(&compiled_binary, &["update", "--backup", "--verbose"], &repo_path);
+    update_result.should_succeed();
+    update_result.should_contain_in_stdout("Creating backup of existing devcontainer configuration...");
+    update_result.should_contain_in_stdout("Backup created before update");
+}
+
+#[rstest]
+fn should_not_create_backup_when_backup_flag_is_not_used(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Run update without backup flag
+    let update_result = run_command(&compiled_binary, &["update"], &repo_path);
+    update_result.should_succeed();
+
+    // Should not mention backup in output
+    assert!(!update_result.stdout.contains("Backup created"));
+    assert!(!update_result.stdout.contains("backup"));
+
+    // Check that backup directory was not created
+    let backup_dir = repo_path.join(".devcontainer.backup");
+    assert_that(&backup_dir.exists()).is_false();
+}
+
+#[rstest]
+fn should_handle_backup_creation_failure_gracefully(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Create a file where backup directory should be to cause conflict
+    let backup_path = repo_path.join(".devcontainer.backup");
+    std::fs::write(&backup_path, "blocking file")
+        .expect("Failed to create blocking file");
+
+    // Run update with backup flag - should handle the error gracefully
+    let update_result = run_command(&compiled_binary, &["update", "--backup"], &repo_path);
+
+    // Should either succeed with warning or fail with helpful error message
+    if update_result.exit_code != 0 {
+        update_result.should_contain_in_stderr("backup");
+    } else {
+        // If it succeeds, it should warn about backup issues
+        assert!(update_result.stderr.contains("backup") || update_result.stdout.contains("warning"));
+    }
+}
+
+// ============================================================================
 // ERROR HANDLING AND RECOVERY TESTS
 // ============================================================================
 

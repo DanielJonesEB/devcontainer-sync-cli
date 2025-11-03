@@ -185,8 +185,15 @@ impl CliApp {
         if backup {
             if self.context.verbose {
                 println!("Creating backup of existing devcontainer configuration...");
+            } else {
+                print!("Creating backup... ");
+                use std::io::{self, Write};
+                io::stdout().flush().unwrap();
             }
-            // TODO: Implement backup creation
+            self.create_backup()?;
+            if !self.context.verbose {
+                println!("✓");
+            }
         }
 
         // Execute the Git command sequence for update
@@ -355,6 +362,67 @@ impl CliApp {
             println!("📁 Kept .devcontainer files (--keep-files specified)");
         }
         println!("\nDevcontainer sync has been completely removed from this repository.");
+        Ok(())
+    }
+
+    fn create_backup(&self) -> Result<(), CliError> {
+        let devcontainer_path = self.context.working_dir.join(DEVCONTAINER_PREFIX);
+        let backup_path = self.context.working_dir.join(format!("{}.backup", DEVCONTAINER_PREFIX));
+
+        // Check if .devcontainer exists
+        if !devcontainer_path.exists() {
+            return Err(CliError::FileSystem {
+                message: "No .devcontainer directory found to backup".to_string(),
+                suggestion: "Run 'devcontainer-sync init' first to create devcontainer configuration".to_string(),
+            });
+        }
+
+        // Remove existing backup if it exists
+        if backup_path.exists() {
+            std::fs::remove_dir_all(&backup_path).map_err(|e| CliError::FileSystem {
+                message: format!("Failed to remove existing backup directory: {}", e),
+                suggestion: "Check file permissions and try again".to_string(),
+            })?;
+        }
+
+        // Copy .devcontainer to .devcontainer.backup
+        self.copy_directory(&devcontainer_path, &backup_path)?;
+
+        if self.context.verbose {
+            println!("Backup created at: {}", backup_path.display());
+        }
+
+        Ok(())
+    }
+
+    fn copy_directory(&self, src: &std::path::Path, dst: &std::path::Path) -> Result<(), CliError> {
+        std::fs::create_dir_all(dst).map_err(|e| CliError::FileSystem {
+            message: format!("Failed to create backup directory: {}", e),
+            suggestion: "Check file permissions and available disk space".to_string(),
+        })?;
+
+        for entry in std::fs::read_dir(src).map_err(|e| CliError::FileSystem {
+            message: format!("Failed to read .devcontainer directory: {}", e),
+            suggestion: "Check file permissions".to_string(),
+        })? {
+            let entry = entry.map_err(|e| CliError::FileSystem {
+                message: format!("Failed to read directory entry: {}", e),
+                suggestion: "Check file permissions".to_string(),
+            })?;
+
+            let src_path = entry.path();
+            let dst_path = dst.join(entry.file_name());
+
+            if src_path.is_dir() {
+                self.copy_directory(&src_path, &dst_path)?;
+            } else {
+                std::fs::copy(&src_path, &dst_path).map_err(|e| CliError::FileSystem {
+                    message: format!("Failed to copy file {}: {}", src_path.display(), e),
+                    suggestion: "Check file permissions and available disk space".to_string(),
+                })?;
+            }
+        }
+
         Ok(())
     }
 }
