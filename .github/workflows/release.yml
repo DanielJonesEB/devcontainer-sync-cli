@@ -38,6 +38,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Verify Cargo.lock is up to date

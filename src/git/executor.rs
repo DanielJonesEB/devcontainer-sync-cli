@@ -119,14 +119,25 @@ mod tests {
         let path = temp_dir.path().to_path_buf();
         let executor = SystemGitExecutor::new();
 
-        // Try to run git command in non-git directory
-        let result = executor.execute_git_command(&["status"], &path);
-        assert!(result.is_err());
+        // Use a command that will definitely fail - invalid git subcommand
+        let result = executor.execute_git_command(&["this-is-not-a-valid-git-command"], &path);
 
-        if let Err(CliError::GitOperation { message, .. }) = result {
-            assert!(message.contains("Git command failed"));
-        } else {
-            panic!("Expected GitOperation error");
+        // Print result for debugging
+        match &result {
+            Ok(output) => println!("Unexpected success with output: '{}'", output),
+            Err(e) => println!("Expected git command error: {:?}", e),
+        }
+
+        assert!(
+            result.is_err(),
+            "Expected git command to fail with invalid subcommand"
+        );
+
+        match result {
+            Err(CliError::GitOperation { message, .. }) => {
+                assert!(message.contains("Git command failed"));
+            }
+            _ => panic!("Expected GitOperation error"),
         }
     }
 

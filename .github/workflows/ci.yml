@@ -22,9 +22,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
+      - name: Pin Rust dirs to workspace (avoid cross-device rename)
+        run: |
+          echo "CARGO_HOME=$GITHUB_WORKSPACE/.cargo" >> $GITHUB_ENV
+          echo "RUSTUP_HOME=$GITHUB_WORKSPACE/.rustup" >> $GITHUB_ENV
+          echo "TMPDIR=$GITHUB_WORKSPACE/.tmp" >> $GITHUB_ENV
+          echo "RUSTUP_TMPDIR=$GITHUB_WORKSPACE/.tmp" >> $GITHUB_ENV
+          mkdir -p "$GITHUB_WORKSPACE/.cargo" "$GITHUB_WORKSPACE/.rustup" "$GITHUB_WORKSPACE/.tmp"
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Verify Cargo.lock is up to date
@@ -34,6 +43,9 @@ jobs:
         uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
         with:
           path: |
+            $CARGO_HOME/registry/index/
+            $CARGO_HOME/registry/cache/
+            $CARGO_HOME/git/db/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
