@@ -1,6 +1,6 @@
 use crate::error::CliError;
 use crate::types::CommandContext;
-use crate::git::{RepositoryValidator, GitRepositoryValidator, SystemGitExecutor, GitRemoteManager, GitBranchManager, GitSubtreeManager, RemoteManager, BranchManager, SubtreeManager};
+use crate::git::{RepositoryValidator, GitRepositoryValidator, SystemGitExecutor, GitExecutor, GitRemoteManager, GitBranchManager, GitSubtreeManager, RemoteManager, BranchManager, SubtreeManager};
 use crate::config::*;
 use std::env;
 
@@ -84,16 +84,70 @@ impl CliApp {
         Ok(())
     }
 
-    pub fn update(&self, _backup: bool, _force: bool) -> Result<(), CliError> {
+    pub fn update(&self, backup: bool, _force: bool) -> Result<(), CliError> {
         if self.context.verbose {
             println!("Updating devcontainer configurations...");
         }
 
-        // Placeholder implementation - will be implemented in later tasks
-        Err(CliError::Repository {
-            message: "Command not implemented yet".to_string(),
-            suggestion: "This is a placeholder implementation".to_string(),
-        })
+        // Validate that we're in a git repository
+        let validator = GitRepositoryValidator::new(self.context.working_dir.clone());
+        validator.validate_git_repository(&self.context.working_dir)?;
+
+        // Create Git operation managers
+        let executor = SystemGitExecutor::new();
+        let remote_manager = GitRemoteManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let branch_manager = GitBranchManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let subtree_manager = GitSubtreeManager::new(executor, self.context.working_dir.clone());
+
+        // Create backup if requested
+        if backup {
+            if self.context.verbose {
+                println!("Creating backup of existing devcontainer configuration...");
+            }
+            // TODO: Implement backup creation
+        }
+
+        // Execute the Git command sequence for update
+
+        // 1. git fetch claude
+        if self.context.verbose {
+            println!("Fetching from Claude Code repository...");
+        }
+        remote_manager.fetch_remote(CLAUDE_REMOTE_NAME)?;
+
+        // 2. git checkout claude-main && git reset --hard claude/main
+        if self.context.verbose {
+            println!("Updating tracking branch...");
+        }
+        branch_manager.checkout_branch(CLAUDE_BRANCH_NAME)?;
+
+        // Reset to latest remote state
+        let executor = SystemGitExecutor::new();
+        executor.execute_git_command(&["reset", "--hard", CLAUDE_REMOTE_BRANCH], &self.context.working_dir)?;
+
+        // 3. git subtree split --prefix=.devcontainer -b devcontainer-updated claude-main
+        if self.context.verbose {
+            println!("Extracting updated devcontainer subtree...");
+        }
+        subtree_manager.split_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_UPDATED_BRANCH)?;
+
+        // 4. git checkout master && git subtree pull --prefix=.devcontainer devcontainer-updated --squash
+        if self.context.verbose {
+            println!("Returning to master branch...");
+        }
+        branch_manager.checkout_branch(MASTER_BRANCH)?;
+
+        if self.context.verbose {
+            println!("Updating devcontainer files...");
+        }
+        // Use git subtree merge to update the existing subtree
+        let executor = SystemGitExecutor::new();
+        executor.execute_git_command(&["subtree", "merge", "--prefix=.devcontainer", "--squash", DEVCONTAINER_UPDATED_BRANCH], &self.context.working_dir)?;
+
+        println!("Successfully updated devcontainer configurations!");
+        Ok(())
     }
 
     pub fn remove(&self, _keep_files: bool) -> Result<(), CliError> {

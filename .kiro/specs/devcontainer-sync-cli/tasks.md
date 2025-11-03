@@ -120,8 +120,8 @@
     - **Expected test results: 9/15 acceptance tests pass (6 update/remove tests fail until implemented)**
     - _Requirements: 3.1, 3.2, 5.1, 5.2_
 
-- [ ] 9. Implement remaining CLI commands
-  - [ ] 9.1 Implement update command with specific Git command sequence
+- [-] 9. Implement remaining CLI commands
+  - [x] 9.1 Implement update command with specific Git command sequence
     - Write command handler for updating existing devcontainer configurations
     - Execute "git fetch claude" to retrieve latest changes (Requirements: 3.1)
     - Execute "git checkout claude-main" and "git reset --hard claude/main" (Requirements: 3.2)
