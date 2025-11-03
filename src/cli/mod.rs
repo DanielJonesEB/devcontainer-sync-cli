@@ -1,6 +1,7 @@
 use crate::error::CliError;
 use crate::types::CommandContext;
-use crate::git::{RepositoryValidator, GitRepositoryValidator};
+use crate::git::{RepositoryValidator, GitRepositoryValidator, SystemGitExecutor, GitRemoteManager, GitBranchManager, GitSubtreeManager, RemoteManager, BranchManager, SubtreeManager};
+use crate::config::*;
 use std::env;
 
 pub struct CliApp {
@@ -27,8 +28,58 @@ impl CliApp {
         // Validate that the repository has commits
         validator.validate_has_commits()?;
 
-        // If we get here, we have a valid git repository with commits
-        // For now, return success - actual implementation will be added in later tasks
+        // Create Git operation managers
+        let executor = SystemGitExecutor::new();
+        let remote_manager = GitRemoteManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let branch_manager = GitBranchManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let subtree_manager = GitSubtreeManager::new(executor, self.context.working_dir.clone());
+
+        // Execute the Git command sequence
+
+        // 1. git remote add claude https://github.com/anthropics/claude-code.git
+        if self.context.verbose {
+            println!("Adding Claude Code remote...");
+        }
+        remote_manager.add_remote(CLAUDE_REMOTE_NAME, CLAUDE_REPO_URL)?;
+
+        // 2. git fetch claude
+        if self.context.verbose {
+            println!("Fetching from Claude Code repository...");
+        }
+        remote_manager.fetch_remote(CLAUDE_REMOTE_NAME)?;
+
+        // 3. git branch -f claude-main claude/main
+        if self.context.verbose {
+            println!("Creating tracking branch...");
+        }
+        branch_manager.force_create_branch(CLAUDE_BRANCH_NAME, CLAUDE_REMOTE_BRANCH)?;
+
+        // 4. git checkout claude-main
+        if self.context.verbose {
+            println!("Switching to Claude branch...");
+        }
+        branch_manager.checkout_branch(CLAUDE_BRANCH_NAME)?;
+
+        // 5. git subtree split --prefix=.devcontainer -b devcontainer claude-main
+        if self.context.verbose {
+            println!("Extracting devcontainer subtree...");
+        }
+        subtree_manager.split_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_BRANCH)?;
+
+        // 6. git checkout master
+        if self.context.verbose {
+            println!("Returning to master branch...");
+        }
+        branch_manager.checkout_branch(MASTER_BRANCH)?;
+
+        // 7. git subtree add --prefix=.devcontainer devcontainer --squash
+        if self.context.verbose {
+            println!("Adding devcontainer files...");
+        }
+        subtree_manager.add_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_BRANCH, true)?;
+
         println!("Successfully initialized devcontainer sync!");
         Ok(())
     }
