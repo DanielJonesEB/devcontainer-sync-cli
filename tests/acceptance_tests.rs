@@ -226,3 +226,28 @@ fn should_succeed_when_git_repo_has_commits(
         .should_succeed()
         .should_contain_in_stdout("Successfully initialized");
 }
+
+#[rstest]
+fn should_create_devcontainer_directory_with_json_file_after_successful_init(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["init"], &repo_path);
+
+    // First verify the command succeeded
+    result.should_succeed();
+
+    // Then verify the .devcontainer directory was created
+    let devcontainer_dir = repo_path.join(".devcontainer");
+    assert_that(&devcontainer_dir.exists()).is_true();
+
+    // Verify devcontainer.json file exists
+    let devcontainer_json = devcontainer_dir.join("devcontainer.json");
+    assert_that(&devcontainer_json.exists()).is_true();
+
+    // Verify it's a valid file (not empty)
+    let metadata = std::fs::metadata(&devcontainer_json).expect("Failed to get file metadata");
+    assert_that(&metadata.len()).is_greater_than(0);
+}
