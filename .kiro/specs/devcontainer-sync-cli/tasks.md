@@ -4,7 +4,7 @@
   - Create Rust project with Cargo.toml including clap, thiserror, tempfile, rstest, spectral dependencies
   - Set up basic CLI structure with main.rs and lib.rs
   - Define project module structure (cli, git, error, config modules)
-  - **Expected test results: 0/4 acceptance tests pass (binary doesn't exist yet)**
+  - **Expected test results: 0/6 acceptance tests pass (binary doesn't exist yet)**
   - _Requirements: 2.1, 2.3_
 
 - [x] 2. Create acceptance test fixtures and write failing tests
@@ -21,11 +21,14 @@
     - Add assertion helpers using spectral for readable test expectations
     - _Requirements: 4.1, 4.3_
 
-  - [x] 2.3 Write the three required acceptance tests
+  - [x] 2.3 Write the required acceptance tests
     - Implement test for non-git repository error case
     - Write test for git repository without commits error case
     - Create test for successful execution with valid git repository
-    - **Expected test results: 0/4 acceptance tests pass (no CLI implementation yet)**
+    - Add test for devcontainer directory creation
+    - Add test for minimal logging output (without --verbose)
+    - Add test for detailed logging output (with --verbose)
+    - **Expected test results: 0/6 acceptance tests pass (no CLI implementation yet)**
     - _Requirements: 4.1, 4.2_
 
 - [x] 3. Create minimal CLI structure to make first test pass
@@ -40,7 +43,7 @@
     - Define main command structure with init, update, remove subcommands
     - Add global flags for verbose, dry-run, and help options
     - Implement command parsing and validation
-    - **Expected test results: 0/4 acceptance tests pass (no repository validation yet)**
+    - **Expected test results: 0/6 acceptance tests pass (no repository validation yet)**
     - _Requirements: 2.1, 4.4_
 
 - [x] 4. Implement repository validation to make error tests pass
@@ -49,7 +52,7 @@
     - Write validate_git_repository method to check for .git directory
     - Implement validate_has_commits method to ensure repository has commits
     - Add check_existing_remote and check_existing_branch methods
-    - **Expected test results: 3/4 acceptance tests pass (validation tests work, devcontainer creation test fails)**
+    - **Expected test results: 3/6 acceptance tests pass (validation tests work, devcontainer creation and logging tests fail)**
     - _Requirements: 4.2, 1.1_
 
   - [x] 4.2 Write unit tests for repository validation
@@ -106,7 +109,7 @@
     - Execute "git checkout master" to return to main branch (Requirements: 1.7)
     - Execute "git subtree add --prefix=.devcontainer devcontainer --squash" (Requirements: 1.8)
     - Add progress reporting and success/error messaging
-    - **Expected test results: 4/4 acceptance tests pass (all core functionality working, devcontainer files created)**
+    - **Expected test results: 6/6 acceptance tests pass (all core functionality working, devcontainer files created, logging verified)**
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
 - [ ] 8. Add comprehensive acceptance test coverage
@@ -114,7 +117,7 @@
     - Write tests for update command scenarios
     - Add tests for remove command functionality
     - Create tests for error handling and recovery scenarios
-    - **Expected test results: 4/7+ acceptance tests pass (new tests will fail initially)**
+    - **Expected test results: 6/9+ acceptance tests pass (new tests will fail initially)**
     - _Requirements: 3.1, 3.2, 5.1, 5.2_
 
 - [ ] 9. Implement remaining CLI commands
@@ -126,7 +129,7 @@
     - Execute "git checkout master" and "git subtree pull --prefix=.devcontainer devcontainer-updated --squash" (Requirements: 3.4)
     - Add backup creation before updates (Requirements: 3.6)
     - Handle merge conflicts with clear error messages (Requirements: 3.5)
-    - **Expected test results: 5-6/7+ acceptance tests pass (update tests now passing)**
+    - **Expected test results: 7-8/9+ acceptance tests pass (update tests now passing)**
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
   - [ ] 9.2 Implement remove command with specific Git command sequence
@@ -137,7 +140,7 @@
     - Execute "rm -rf .devcontainer" with user confirmation (Requirements: 5.4)
     - Add confirmation prompts for destructive operations
     - Display confirmation of all cleaned resources (Requirements: 5.5)
-    - **Expected test results: 7+/7+ acceptance tests pass (all functionality complete)**
+    - **Expected test results: 9+/9+ acceptance tests pass (all functionality complete)**
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 10. Finalize implementation and add advanced features

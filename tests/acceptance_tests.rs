@@ -251,3 +251,42 @@ fn should_create_devcontainer_directory_with_json_file_after_successful_init(
     let metadata = std::fs::metadata(&devcontainer_json).expect("Failed to get file metadata");
     assert_that(&metadata.len()).is_greater_than(0);
 }
+#[rstest]
+fn should_show_minimal_output_without_verbose_flag(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["init"], &repo_path);
+
+    result.should_succeed();
+    result.should_contain_in_stdout("Successfully initialized devcontainer sync!");
+
+    // Should not contain verbose messages
+    assert!(!result.stdout.contains("Initializing devcontainer sync from Claude Code repository..."));
+    assert!(!result.stdout.contains("Adding Claude Code remote..."));
+}
+
+#[rstest]
+fn should_show_detailed_output_with_verbose_flag(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["init", "--verbose"], &repo_path);
+
+    result.should_succeed();
+
+    // Check all verbose messages are present in order
+    result.should_contain_in_stdout("Initializing devcontainer sync from Claude Code repository...");
+    result.should_contain_in_stdout("Adding Claude Code remote...");
+    result.should_contain_in_stdout("Fetching from Claude Code repository...");
+    result.should_contain_in_stdout("Creating tracking branch...");
+    result.should_contain_in_stdout("Switching to Claude branch...");
+    result.should_contain_in_stdout("Extracting devcontainer subtree...");
+    result.should_contain_in_stdout("Returning to master branch...");
+    result.should_contain_in_stdout("Adding devcontainer files...");
+    result.should_contain_in_stdout("Successfully initialized devcontainer sync!");
+}
