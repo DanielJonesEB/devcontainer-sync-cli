@@ -96,12 +96,18 @@
     - Add default timeout and configuration values
     - _Requirements: 1.1, 2.2_
 
-  - [ ] 7.2 Implement init command
-    - Write command handler that validates repository state
-    - Execute git remote add, fetch, branch creation, and subtree operations
+  - [ ] 7.2 Implement init command with specific Git command sequence
+    - Write command handler that validates repository state (Requirements: 1.1, 4.2, 4.3)
+    - Execute "git remote add claude https://github.com/anthropics/claude-code.git" (Requirements: 1.2)
+    - Execute "git fetch claude" to retrieve latest changes (Requirements: 1.3)
+    - Execute "git branch -f claude-main claude/main" to create tracking branch (Requirements: 1.4)
+    - Execute "git checkout claude-main" to switch to Claude branch (Requirements: 1.5)
+    - Execute "git subtree split --prefix=.devcontainer -b devcontainer claude-main" (Requirements: 1.6)
+    - Execute "git checkout master" to return to main branch (Requirements: 1.7)
+    - Execute "git subtree add --prefix=.devcontainer devcontainer --squash" (Requirements: 1.8)
     - Add progress reporting and success/error messaging
     - **Expected test results: 3/3 acceptance tests pass (all core functionality working)**
-    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
 - [ ] 8. Add comprehensive acceptance test coverage
   - [ ] 8.1 Write additional acceptance tests for update and remove commands
@@ -112,17 +118,25 @@
     - _Requirements: 3.1, 3.2, 5.1, 5.2_
 
 - [ ] 9. Implement remaining CLI commands
-  - [ ] 9.1 Implement update command
+  - [ ] 9.1 Implement update command with specific Git command sequence
     - Write command handler for updating existing devcontainer configurations
-    - Add backup creation before updates
-    - Handle merge conflicts with clear error messages
+    - Execute "git fetch claude" to retrieve latest changes (Requirements: 3.1)
+    - Execute "git checkout claude-main" and "git reset --hard claude/main" (Requirements: 3.2)
+    - Execute "git subtree split --prefix=.devcontainer -b devcontainer-updated claude-main" (Requirements: 3.3)
+    - Execute "git checkout master" and "git subtree pull --prefix=.devcontainer devcontainer-updated --squash" (Requirements: 3.4)
+    - Add backup creation before updates (Requirements: 3.6)
+    - Handle merge conflicts with clear error messages (Requirements: 3.5)
     - **Expected test results: 4-5/6+ acceptance tests pass (update tests now passing)**
-    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 9.2 Implement remove command
+  - [ ] 9.2 Implement remove command with specific Git command sequence
     - Write command handler for cleaning up Claude Code integration
-    - Remove remotes, branches, and optionally devcontainer directory
+    - Execute "git remote remove claude" to remove Claude remote (Requirements: 5.1)
+    - Execute "git branch -D claude-main" to delete tracking branch (Requirements: 5.2)
+    - Execute "git branch -D devcontainer" and "git branch -D devcontainer-updated" (Requirements: 5.3)
+    - Execute "rm -rf .devcontainer" with user confirmation (Requirements: 5.4)
     - Add confirmation prompts for destructive operations
+    - Display confirmation of all cleaned resources (Requirements: 5.5)
     - **Expected test results: 6+/6+ acceptance tests pass (all functionality complete)**
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
@@ -134,10 +148,12 @@
     - _Requirements: 2.3, 2.4_
 
   - [ ] 10.2 Add progress reporting and user experience features
-    - Implement progress indicators for long-running operations
-    - Add verbose logging options for debugging
-    - Create clear success and error messaging
-    - _Requirements: 2.5, 4.4, 4.5_
+    - Implement progress indicators for long-running operations (Requirements: 2.5)
+    - Add verbose logging options for debugging (Requirements: 4.5)
+    - Create clear success and error messaging (Requirements: 4.4)
+    - Add confirmation prompts for overwriting existing devcontainer configurations (Requirements: 4.6)
+    - Display summary of changes made when operations complete successfully (Requirements: 4.4)
+    - _Requirements: 2.5, 4.4, 4.5, 4.6_
 
   - [ ] 10.3 Performance optimization and final testing
     - Optimize git command execution for speed
