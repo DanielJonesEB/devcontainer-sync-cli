@@ -1,0 +1,64 @@
+use clap::{Parser, Subcommand};
+use devcontainer_sync_cli::{cli::CliApp, error::CliError};
+use std::process;
+
+#[derive(Parser)]
+#[command(name = "devcontainer-sync")]
+#[command(about = "A CLI tool for syncing devcontainer configurations from Claude Code repository")]
+#[command(version)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+
+    /// Enable verbose output
+    #[arg(short, long, global = true)]
+    verbose: bool,
+
+    /// Show what would be done without making changes
+    #[arg(long, global = true)]
+    dry_run: bool,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Initialize devcontainer tracking from Claude Code repository
+    Init,
+    /// Update existing devcontainer configurations
+    Update {
+        /// Create backup before updating
+        #[arg(long)]
+        backup: bool,
+        /// Force update even if conflicts exist
+        #[arg(long)]
+        force: bool,
+    },
+    /// Remove devcontainer tracking and cleanup
+    Remove {
+        /// Keep devcontainer files when removing tracking
+        #[arg(long)]
+        keep_files: bool,
+    },
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    let app = CliApp::new(cli.verbose, cli.dry_run);
+
+    let result = match cli.command {
+        Commands::Init => app.init(),
+        Commands::Update { backup, force } => app.update(backup, force),
+        Commands::Remove { keep_files } => app.remove(keep_files),
+    };
+
+    match result {
+        Ok(_) => process::exit(0),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            if cli.verbose {
+                eprintln!("Suggestion: {}", e.suggestion());
+            }
+            process::exit(e.exit_code());
+        }
+    }
+}
