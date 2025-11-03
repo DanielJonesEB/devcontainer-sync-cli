@@ -28,6 +28,34 @@ impl CliApp {
         // Validate that the repository has commits
         validator.validate_has_commits()?;
 
+        // Check if .devcontainer already exists and prompt for confirmation
+        let devcontainer_path = self.context.working_dir.join(DEVCONTAINER_PREFIX);
+        if devcontainer_path.exists() {
+            if !self.context.dry_run {
+                println!("Warning: .devcontainer directory already exists.");
+                println!("This will overwrite existing devcontainer configurations.");
+                print!("Continue? (y/N): ");
+                use std::io::{self, Write};
+                io::stdout().flush().unwrap();
+
+                let mut input = String::new();
+                io::stdin().read_line(&mut input).map_err(|e| CliError::FileSystem {
+                    message: format!("Failed to read user input: {}", e),
+                    suggestion: "Try running the command again".to_string(),
+                })?;
+
+                let input = input.trim().to_lowercase();
+                if input != "y" && input != "yes" {
+                    return Err(CliError::Repository {
+                        message: "Operation cancelled by user".to_string(),
+                        suggestion: "Use --force flag to skip confirmation or backup existing files first".to_string(),
+                    });
+                }
+            } else if self.context.verbose {
+                println!("Would overwrite existing .devcontainer directory (dry-run mode)");
+            }
+        }
+
         // Create Git operation managers
         let executor = SystemGitExecutor::new();
         let remote_manager = GitRemoteManager::new(executor, self.context.working_dir.clone());
@@ -41,46 +69,102 @@ impl CliApp {
         // 1. git remote add claude https://github.com/anthropics/claude-code.git
         if self.context.verbose {
             println!("Adding Claude Code remote...");
+        } else {
+            print!("Adding remote... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         remote_manager.add_remote(CLAUDE_REMOTE_NAME, CLAUDE_REPO_URL)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 2. git fetch claude
         if self.context.verbose {
             println!("Fetching from Claude Code repository...");
+        } else {
+            print!("Fetching repository... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         remote_manager.fetch_remote(CLAUDE_REMOTE_NAME)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 3. git branch -f claude-main claude/main
         if self.context.verbose {
             println!("Creating tracking branch...");
+        } else {
+            print!("Creating branch... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.force_create_branch(CLAUDE_BRANCH_NAME, CLAUDE_REMOTE_BRANCH)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 4. git checkout claude-main
         if self.context.verbose {
             println!("Switching to Claude branch...");
+        } else {
+            print!("Switching branches... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.checkout_branch(CLAUDE_BRANCH_NAME)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 5. git subtree split --prefix=.devcontainer -b devcontainer claude-main
         if self.context.verbose {
             println!("Extracting devcontainer subtree...");
+        } else {
+            print!("Extracting devcontainer... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         subtree_manager.split_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_BRANCH)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 6. git checkout master
         if self.context.verbose {
             println!("Returning to master branch...");
+        } else {
+            print!("Returning to master... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.checkout_branch(MASTER_BRANCH)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 7. git subtree add --prefix=.devcontainer devcontainer --squash
         if self.context.verbose {
             println!("Adding devcontainer files...");
+        } else {
+            print!("Adding devcontainer files... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         subtree_manager.add_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_BRANCH, true)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
-        println!("Successfully initialized devcontainer sync!");
+        // Display summary of changes
+        println!("\n✅ Successfully initialized devcontainer sync!");
+        println!("📁 Created .devcontainer directory with Claude Code configurations");
+        println!("🔗 Added 'claude' remote pointing to https://github.com/anthropics/claude-code.git");
+        println!("🌿 Created tracking branch 'claude-main' for future updates");
+        println!("\nNext steps:");
+        println!("  • Run 'devcontainer-sync update' to get the latest configurations");
+        println!("  • Run 'devcontainer-sync remove' to clean up if no longer needed");
         Ok(())
     }
 
@@ -114,39 +198,81 @@ impl CliApp {
         // 1. git fetch claude
         if self.context.verbose {
             println!("Fetching from Claude Code repository...");
+        } else {
+            print!("Fetching updates... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         remote_manager.fetch_remote(CLAUDE_REMOTE_NAME)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 2. git checkout claude-main && git reset --hard claude/main
         if self.context.verbose {
             println!("Updating tracking branch...");
+        } else {
+            print!("Updating tracking branch... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.checkout_branch(CLAUDE_BRANCH_NAME)?;
 
         // Reset to latest remote state
         let executor = SystemGitExecutor::new();
         executor.execute_git_command(&["reset", "--hard", CLAUDE_REMOTE_BRANCH], &self.context.working_dir)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 3. git subtree split --prefix=.devcontainer -b devcontainer-updated claude-main
         if self.context.verbose {
             println!("Extracting updated devcontainer subtree...");
+        } else {
+            print!("Extracting updates... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         subtree_manager.split_subtree(DEVCONTAINER_PREFIX, DEVCONTAINER_UPDATED_BRANCH)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 4. git checkout master && git subtree pull --prefix=.devcontainer devcontainer-updated --squash
         if self.context.verbose {
             println!("Returning to master branch...");
+        } else {
+            print!("Returning to master... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.checkout_branch(MASTER_BRANCH)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         if self.context.verbose {
             println!("Updating devcontainer files...");
+        } else {
+            print!("Applying updates... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         // Use git subtree merge to update the existing subtree
         let executor = SystemGitExecutor::new();
         executor.execute_git_command(&["subtree", "merge", "--prefix=.devcontainer", "--squash", DEVCONTAINER_UPDATED_BRANCH], &self.context.working_dir)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
-        println!("Successfully updated devcontainer configurations!");
+        // Display summary of changes
+        println!("\n✅ Successfully updated devcontainer configurations!");
+        println!("📁 Updated .devcontainer directory with latest Claude Code configurations");
+        if backup {
+            println!("💾 Backup created before update");
+        }
+        println!("🔄 Merged latest changes from Claude Code repository");
+        println!("\nYour devcontainer is now up to date with the latest configurations.");
         Ok(())
     }
 
@@ -172,12 +298,23 @@ impl CliApp {
         // 1. git remote remove claude
         if self.context.verbose {
             println!("Removing Claude remote...");
+        } else {
+            print!("Removing remote... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         remote_manager.remove_remote(CLAUDE_REMOTE_NAME)?;
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 2. git branch -D claude-main
         if self.context.verbose {
             println!("Deleting tracking branch...");
+        } else {
+            print!("Removing branches... ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
         }
         branch_manager.delete_branch(CLAUDE_BRANCH_NAME)?;
 
@@ -188,20 +325,40 @@ impl CliApp {
         // These branches might not exist, so we ignore errors
         let _ = branch_manager.delete_branch(DEVCONTAINER_BRANCH);
         let _ = branch_manager.delete_branch(DEVCONTAINER_UPDATED_BRANCH);
+        if !self.context.verbose {
+            println!("✓");
+        }
 
         // 4. Remove .devcontainer directory if not keeping files
         if !keep_files {
             if self.context.verbose {
                 println!("Removing devcontainer directory...");
+            } else {
+                print!("Removing files... ");
+                use std::io::{self, Write};
+                io::stdout().flush().unwrap();
             }
             subtree_manager.remove_subtree(DEVCONTAINER_PREFIX)?;
 
             // Commit the removal
             let executor = SystemGitExecutor::new();
             executor.execute_git_command(&["commit", "-m", "Remove devcontainer configuration"], &self.context.working_dir)?;
+            if !self.context.verbose {
+                println!("✓");
+            }
         }
 
-        println!("Successfully removed devcontainer sync!");
+        // Display summary of changes
+        println!("\n✅ Successfully removed devcontainer sync!");
+        println!("🔗 Removed 'claude' remote");
+        println!("🌿 Deleted tracking branches");
+        if !keep_files {
+            println!("📁 Removed .devcontainer directory and files");
+            println!("💾 Changes committed to git history");
+        } else {
+            println!("📁 Kept .devcontainer files (--keep-files specified)");
+        }
+        println!("\nDevcontainer sync has been completely removed from this repository.");
         Ok(())
     }
 }

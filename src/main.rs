@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use devcontainer_sync_cli::{cli::CliApp, error::CliError};
+use devcontainer_sync_cli::cli::CliApp;
 use std::process;
 
 #[derive(Parser)]

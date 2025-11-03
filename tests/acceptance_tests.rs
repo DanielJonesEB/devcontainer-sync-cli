@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use rstest::*;
 use spectral::prelude::*;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Command;
 use std::sync::Mutex;
 use tempfile::TempDir;
 
