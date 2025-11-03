@@ -20,7 +20,6 @@ devcontainer-sync remove
 ## Options
 
 - `--verbose, -v`: Show detailed output
-- `--dry-run`: Preview changes without making them
 - `update --backup`: Create backup before updating
 - `remove --keep-files`: Keep devcontainer files when removing sync
 

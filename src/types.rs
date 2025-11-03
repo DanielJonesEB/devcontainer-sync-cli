@@ -7,16 +7,14 @@ use crate::error::CliError;
 pub struct CommandContext {
     pub working_dir: PathBuf,
     pub verbose: bool,
-    pub dry_run: bool,
     pub timeout: Duration,
 }
 
 impl CommandContext {
-    pub fn new(working_dir: PathBuf, verbose: bool, dry_run: bool) -> Self {
+    pub fn new(working_dir: PathBuf, verbose: bool) -> Self {
         Self {
             working_dir,
             verbose,
-            dry_run,
             timeout: crate::config::default_timeout(),
         }
     }

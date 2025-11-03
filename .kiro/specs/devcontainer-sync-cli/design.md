@@ -44,7 +44,7 @@ graph TB
 
 **Command Structure:**
 ```
-devcontainer-sync init [--verbose] [--dry-run]
+devcontainer-sync init [--verbose]
 devcontainer-sync update [--verbose] [--backup] [--force]
 devcontainer-sync remove [--verbose] [--keep-files]
 devcontainer-sync version
@@ -135,7 +135,6 @@ pub const DEFAULT_TIMEOUT_SECS: u64 = 30;
 pub struct CommandContext {
     pub working_dir: PathBuf,
     pub verbose: bool,
-    pub dry_run: bool,
     pub timeout: Duration,
     pub git_executor: Box<dyn GitExecutor>,
 }

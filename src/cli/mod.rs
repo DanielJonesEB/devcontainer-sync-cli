@@ -9,9 +9,9 @@ pub struct CliApp {
 }
 
 impl CliApp {
-    pub fn new(verbose: bool, dry_run: bool) -> Self {
+    pub fn new(verbose: bool) -> Self {
         let working_dir = env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-        let context = CommandContext::new(working_dir, verbose, dry_run);
+        let context = CommandContext::new(working_dir, verbose);
 
         Self { context }
     }
@@ -31,28 +31,24 @@ impl CliApp {
         // Check if .devcontainer already exists and prompt for confirmation
         let devcontainer_path = self.context.working_dir.join(DEVCONTAINER_PREFIX);
         if devcontainer_path.exists() {
-            if !self.context.dry_run {
-                println!("Warning: .devcontainer directory already exists.");
-                println!("This will overwrite existing devcontainer configurations.");
-                print!("Continue? (y/N): ");
-                use std::io::{self, Write};
-                io::stdout().flush().unwrap();
+            println!("Warning: .devcontainer directory already exists.");
+            println!("This will overwrite existing devcontainer configurations.");
+            print!("Continue? (y/N): ");
+            use std::io::{self, Write};
+            io::stdout().flush().unwrap();
 
-                let mut input = String::new();
-                io::stdin().read_line(&mut input).map_err(|e| CliError::FileSystem {
-                    message: format!("Failed to read user input: {}", e),
-                    suggestion: "Try running the command again".to_string(),
-                })?;
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).map_err(|e| CliError::FileSystem {
+                message: format!("Failed to read user input: {}", e),
+                suggestion: "Try running the command again".to_string(),
+            })?;
 
-                let input = input.trim().to_lowercase();
-                if input != "y" && input != "yes" {
-                    return Err(CliError::Repository {
-                        message: "Operation cancelled by user".to_string(),
-                        suggestion: "Use --force flag to skip confirmation or backup existing files first".to_string(),
-                    });
-                }
-            } else if self.context.verbose {
-                println!("Would overwrite existing .devcontainer directory (dry-run mode)");
+            let input = input.trim().to_lowercase();
+            if input != "y" && input != "yes" {
+                return Err(CliError::Repository {
+                    message: "Operation cancelled by user".to_string(),
+                    suggestion: "Use --force flag to skip confirmation or backup existing files first".to_string(),
+                });
             }
         }
 

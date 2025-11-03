@@ -14,9 +14,7 @@ struct Cli {
     #[arg(short, long, global = true)]
     verbose: bool,
 
-    /// Show what would be done without making changes
-    #[arg(long, global = true)]
-    dry_run: bool,
+
 }
 
 #[derive(Subcommand)]
@@ -43,7 +41,7 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    let app = CliApp::new(cli.verbose, cli.dry_run);
+    let app = CliApp::new(cli.verbose);
 
     let result = match cli.command {
         Commands::Init => app.init(),

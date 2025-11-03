@@ -22,7 +22,7 @@ This is a Rust CLI tool (`devcontainer-sync-cli`) that syncs devcontainer config
 - Provide convenience constructors for common error scenarios
 
 ### CLI Design
-- Use global flags for `--verbose` and `--dry-run` across all commands
+- Use global flags for `--verbose` across all commands
 - Structure commands as subcommands (init, update, remove) with specific options
 - Always provide helpful descriptions and version information
 

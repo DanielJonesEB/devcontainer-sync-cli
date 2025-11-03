@@ -41,7 +41,7 @@
 
   - [x] 3.2 Set up clap CLI framework with basic structure
     - Define main command structure with init, update, remove subcommands
-    - Add global flags for verbose, dry-run, and help options
+    - Add global flags for verbose and help options
     - Implement command parsing and validation
     - **Expected test results: 0/15 acceptance tests pass (no repository validation yet)**
     - _Requirements: 2.1, 4.4_
