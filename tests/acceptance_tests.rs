@@ -290,3 +290,159 @@ fn should_show_detailed_output_with_verbose_flag(
     result.should_contain_in_stdout("Adding devcontainer files...");
     result.should_contain_in_stdout("Successfully initialized devcontainer sync!");
 }
+// ============================================================================
+// UPDATE COMMAND TESTS
+// ============================================================================
+
+#[rstest]
+fn should_fail_update_command_when_not_initialized(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["update"], &repo_path);
+
+    result.should_fail();
+    // Should fail because Claude remote doesn't exist yet
+    result.should_contain_in_stderr("Remote 'claude' does not exist");
+}
+
+#[rstest]
+fn should_succeed_update_command_after_init(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Then update should work
+    let update_result = run_command(&compiled_binary, &["update"], &repo_path);
+    update_result.should_succeed();
+    update_result.should_contain_in_stdout("Successfully updated devcontainer configurations!");
+}
+
+#[rstest]
+fn should_show_verbose_output_for_update_command(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Then update with verbose flag
+    let update_result = run_command(&compiled_binary, &["update", "--verbose"], &repo_path);
+    update_result.should_succeed();
+    update_result.should_contain_in_stdout("Updating devcontainer configurations...");
+    update_result.should_contain_in_stdout("Fetching from Claude Code repository...");
+    update_result.should_contain_in_stdout("Successfully updated devcontainer configurations!");
+}
+
+// ============================================================================
+// REMOVE COMMAND TESTS
+// ============================================================================
+
+#[rstest]
+fn should_fail_remove_command_when_not_initialized(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["remove"], &repo_path);
+
+    result.should_fail();
+    // Should fail because there's nothing to remove
+    result.should_contain_in_stderr("Remote 'claude' does not exist");
+}
+
+#[rstest]
+fn should_succeed_remove_command_after_init(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Verify .devcontainer exists
+    assert_that(&repo_path.join(".devcontainer").exists()).is_true();
+
+    // Then remove should work
+    let remove_result = run_command(&compiled_binary, &["remove"], &repo_path);
+    remove_result.should_succeed();
+    remove_result.should_contain_in_stdout("Successfully removed devcontainer sync!");
+
+    // Verify .devcontainer is removed
+    assert_that(&repo_path.join(".devcontainer").exists()).is_false();
+}
+
+#[rstest]
+fn should_show_verbose_output_for_remove_command(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    // First initialize
+    let init_result = run_command(&compiled_binary, &["init"], &repo_path);
+    init_result.should_succeed();
+
+    // Then remove with verbose flag
+    let remove_result = run_command(&compiled_binary, &["remove", "--verbose"], &repo_path);
+    remove_result.should_succeed();
+    remove_result.should_contain_in_stdout("Removing devcontainer sync...");
+    remove_result.should_contain_in_stdout("Removing Claude remote...");
+    remove_result.should_contain_in_stdout("Successfully removed devcontainer sync!");
+}
+
+// ============================================================================
+// ERROR HANDLING AND RECOVERY TESTS
+// ============================================================================
+
+#[rstest]
+fn should_handle_invalid_command_gracefully(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["invalid-command"], &repo_path);
+
+    result.should_fail();
+    // Should show help or error about invalid command
+}
+
+#[rstest]
+fn should_show_help_when_no_command_provided(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &[], &repo_path);
+
+    result.should_fail();
+    // Should show help message
+}
+
+#[rstest]
+fn should_show_version_information(
+    temp_git_repo_with_commits: (TempDir, PathBuf),
+    compiled_binary: PathBuf
+) {
+    let (_temp_dir, repo_path) = temp_git_repo_with_commits;
+
+    let result = run_command(&compiled_binary, &["--version"], &repo_path);
+
+    result.should_succeed();
+    result.should_contain_in_stdout("devcontainer-sync");
+}
