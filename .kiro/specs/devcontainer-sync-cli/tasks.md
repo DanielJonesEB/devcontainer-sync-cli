@@ -120,7 +120,7 @@
     - **Expected test results: 9/15 acceptance tests pass (6 update/remove tests fail until implemented)**
     - _Requirements: 3.1, 3.2, 5.1, 5.2_
 
-- [-] 9. Implement remaining CLI commands
+- [x] 9. Implement remaining CLI commands
   - [x] 9.1 Implement update command with specific Git command sequence
     - Write command handler for updating existing devcontainer configurations
     - Execute "git fetch claude" to retrieve latest changes (Requirements: 3.1)
@@ -132,7 +132,7 @@
     - **Expected test results: 12/15 acceptance tests pass (update tests now passing, remove tests still fail)**
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 9.2 Implement remove command with specific Git command sequence
+  - [x] 9.2 Implement remove command with specific Git command sequence
     - Write command handler for cleaning up Claude Code integration
     - Execute "git remote remove claude" to remove Claude remote (Requirements: 5.1)
     - Execute "git branch -D claude-main" to delete tracking branch (Requirements: 5.2)

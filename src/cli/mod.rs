@@ -150,15 +150,58 @@ impl CliApp {
         Ok(())
     }
 
-    pub fn remove(&self, _keep_files: bool) -> Result<(), CliError> {
+    pub fn remove(&self, keep_files: bool) -> Result<(), CliError> {
         if self.context.verbose {
             println!("Removing devcontainer sync...");
         }
 
-        // Placeholder implementation - will be implemented in later tasks
-        Err(CliError::Repository {
-            message: "Command not implemented yet".to_string(),
-            suggestion: "This is a placeholder implementation".to_string(),
-        })
+        // Validate that we're in a git repository
+        let validator = GitRepositoryValidator::new(self.context.working_dir.clone());
+        validator.validate_git_repository(&self.context.working_dir)?;
+
+        // Create Git operation managers
+        let executor = SystemGitExecutor::new();
+        let remote_manager = GitRemoteManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let branch_manager = GitBranchManager::new(executor, self.context.working_dir.clone());
+        let executor = SystemGitExecutor::new();
+        let subtree_manager = GitSubtreeManager::new(executor, self.context.working_dir.clone());
+
+        // Execute the Git command sequence for remove
+
+        // 1. git remote remove claude
+        if self.context.verbose {
+            println!("Removing Claude remote...");
+        }
+        remote_manager.remove_remote(CLAUDE_REMOTE_NAME)?;
+
+        // 2. git branch -D claude-main
+        if self.context.verbose {
+            println!("Deleting tracking branch...");
+        }
+        branch_manager.delete_branch(CLAUDE_BRANCH_NAME)?;
+
+        // 3. git branch -D devcontainer && git branch -D devcontainer-updated
+        if self.context.verbose {
+            println!("Cleaning up subtree branches...");
+        }
+        // These branches might not exist, so we ignore errors
+        let _ = branch_manager.delete_branch(DEVCONTAINER_BRANCH);
+        let _ = branch_manager.delete_branch(DEVCONTAINER_UPDATED_BRANCH);
+
+        // 4. Remove .devcontainer directory if not keeping files
+        if !keep_files {
+            if self.context.verbose {
+                println!("Removing devcontainer directory...");
+            }
+            subtree_manager.remove_subtree(DEVCONTAINER_PREFIX)?;
+
+            // Commit the removal
+            let executor = SystemGitExecutor::new();
+            executor.execute_git_command(&["commit", "-m", "Remove devcontainer configuration"], &self.context.working_dir)?;
+        }
+
+        println!("Successfully removed devcontainer sync!");
+        Ok(())
     }
 }
