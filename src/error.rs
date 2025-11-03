@@ -38,7 +38,9 @@ impl CliError {
     pub fn not_git_repository() -> Self {
         CliError::Repository {
             message: "Current directory is not a git repository".to_string(),
-            suggestion: "Run this command from within a git repository or initialize one with 'git init'".to_string(),
+            suggestion:
+                "Run this command from within a git repository or initialize one with 'git init'"
+                    .to_string(),
         }
     }
 

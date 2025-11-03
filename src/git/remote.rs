@@ -30,16 +30,19 @@ impl<T: GitExecutor> GitRemoteManager<T> {
 
 impl<T: GitExecutor> RemoteManager for GitRemoteManager<T> {
     fn add_remote(&self, name: &str, url: &str) -> Result<(), CliError> {
-        self.executor.execute_git_command(
-            &["remote", "add", name, url],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["remote", "add", name, url], &self.working_dir)?;
 
         // Verify the remote was added successfully
-        if self.executor.execute_git_command(&["remote", "get-url", name], &self.working_dir).is_err() {
+        if self
+            .executor
+            .execute_git_command(&["remote", "get-url", name], &self.working_dir)
+            .is_err()
+        {
             return Err(CliError::GitOperation {
                 message: format!("Failed to add remote '{}' with URL '{}'", name, url),
-                suggestion: "Check that the remote name is valid and the URL is accessible".to_string(),
+                suggestion: "Check that the remote name is valid and the URL is accessible"
+                    .to_string(),
             });
         }
 
@@ -48,43 +51,46 @@ impl<T: GitExecutor> RemoteManager for GitRemoteManager<T> {
 
     fn remove_remote(&self, name: &str) -> Result<(), CliError> {
         // Check if remote exists first
-        if self.executor.execute_git_command(&["remote", "get-url", name], &self.working_dir).is_err() {
+        if self
+            .executor
+            .execute_git_command(&["remote", "get-url", name], &self.working_dir)
+            .is_err()
+        {
             return Err(CliError::GitOperation {
                 message: format!("Remote '{}' does not exist", name),
                 suggestion: "Use 'git remote -v' to list existing remotes".to_string(),
             });
         }
 
-        self.executor.execute_git_command(
-            &["remote", "remove", name],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["remote", "remove", name], &self.working_dir)?;
 
         Ok(())
     }
 
     fn fetch_remote(&self, name: &str) -> Result<(), CliError> {
         // Check if remote exists first
-        if self.executor.execute_git_command(&["remote", "get-url", name], &self.working_dir).is_err() {
+        if self
+            .executor
+            .execute_git_command(&["remote", "get-url", name], &self.working_dir)
+            .is_err()
+        {
             return Err(CliError::GitOperation {
                 message: format!("Remote '{}' does not exist", name),
                 suggestion: "Add the remote first using 'git remote add'".to_string(),
             });
         }
 
-        self.executor.execute_git_command(
-            &["fetch", name],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["fetch", name], &self.working_dir)?;
 
         Ok(())
     }
 
     fn list_remotes(&self) -> Result<Vec<Remote>, CliError> {
-        let output = self.executor.execute_git_command(
-            &["remote", "-v"],
-            &self.working_dir
-        )?;
+        let output = self
+            .executor
+            .execute_git_command(&["remote", "-v"], &self.working_dir)?;
 
         let mut remotes = Vec::new();
         let mut seen_names = std::collections::HashSet::new();
@@ -114,9 +120,9 @@ impl<T: GitExecutor> RemoteManager for GitRemoteManager<T> {
 mod tests {
     use super::*;
     use crate::git::SystemGitExecutor;
-    use tempfile::TempDir;
-    use std::process::Command;
     use std::fs;
+    use std::process::Command;
+    use tempfile::TempDir;
 
     fn create_test_git_repo() -> (TempDir, std::path::PathBuf) {
         let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -124,36 +130,35 @@ mod tests {
 
         // Initialize git repository
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(&path)
             .output()
             .expect("Failed to initialize git repository");
 
         // Configure git user
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user email");
 
         // Create a test file and make initial commit
-        fs::write(path.join("test.txt"), "test content")
-            .expect("Failed to create test file");
+        fs::write(path.join("test.txt"), "test content").expect("Failed to create test file");
 
         Command::new("git")
-            .args(&["add", "test.txt"])
+            .args(["add", "test.txt"])
             .current_dir(&path)
             .output()
             .expect("Failed to add file to git");
 
         Command::new("git")
-            .args(&["commit", "-m", "Initial commit"])
+            .args(["commit", "-m", "Initial commit"])
             .current_dir(&path)
             .output()
             .expect("Failed to make initial commit");

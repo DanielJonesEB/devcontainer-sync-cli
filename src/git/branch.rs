@@ -32,48 +32,39 @@ impl<T: GitExecutor> GitBranchManager<T> {
 
 impl<T: GitExecutor> BranchManager for GitBranchManager<T> {
     fn create_branch(&self, name: &str, source: &str) -> Result<(), CliError> {
-        self.executor.execute_git_command(
-            &["branch", name, source],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["branch", name, source], &self.working_dir)?;
 
         Ok(())
     }
 
     fn force_create_branch(&self, name: &str, source: &str) -> Result<(), CliError> {
         // Use -f flag to force create/update the branch
-        self.executor.execute_git_command(
-            &["branch", "-f", name, source],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["branch", "-f", name, source], &self.working_dir)?;
 
         Ok(())
     }
 
     fn delete_branch(&self, name: &str) -> Result<(), CliError> {
         // Use -D flag to force delete the branch
-        self.executor.execute_git_command(
-            &["branch", "-D", name],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["branch", "-D", name], &self.working_dir)?;
 
         Ok(())
     }
 
     fn checkout_branch(&self, name: &str) -> Result<(), CliError> {
-        self.executor.execute_git_command(
-            &["checkout", name],
-            &self.working_dir
-        )?;
+        self.executor
+            .execute_git_command(&["checkout", name], &self.working_dir)?;
 
         Ok(())
     }
 
     fn list_branches(&self) -> Result<Vec<Branch>, CliError> {
-        let output = self.executor.execute_git_command(
-            &["branch", "-vv"],
-            &self.working_dir
-        )?;
+        let output = self
+            .executor
+            .execute_git_command(&["branch", "-vv"], &self.working_dir)?;
 
         let mut branches = Vec::new();
 
@@ -96,11 +87,7 @@ impl<T: GitExecutor> BranchManager for GitBranchManager<T> {
             if let Some(name) = line.split_whitespace().next() {
                 // Extract upstream info if present (between square brackets)
                 let upstream = if let Some(start) = line.find('[') {
-                    if let Some(end) = line.find(']') {
-                        Some(line[start + 1..end].to_string())
-                    } else {
-                        None
-                    }
+                    line.find(']').map(|end| line[start + 1..end].to_string())
                 } else {
                     None
                 };
@@ -121,9 +108,9 @@ impl<T: GitExecutor> BranchManager for GitBranchManager<T> {
 mod tests {
     use super::*;
     use crate::git::SystemGitExecutor;
-    use tempfile::TempDir;
-    use std::process::Command;
     use std::fs;
+    use std::process::Command;
+    use tempfile::TempDir;
 
     fn create_test_git_repo() -> (TempDir, std::path::PathBuf) {
         let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -131,36 +118,35 @@ mod tests {
 
         // Initialize git repository
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(&path)
             .output()
             .expect("Failed to initialize git repository");
 
         // Configure git user
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user email");
 
         // Create a test file and make initial commit
-        fs::write(path.join("test.txt"), "test content")
-            .expect("Failed to create test file");
+        fs::write(path.join("test.txt"), "test content").expect("Failed to create test file");
 
         Command::new("git")
-            .args(&["add", "test.txt"])
+            .args(["add", "test.txt"])
             .current_dir(&path)
             .output()
             .expect("Failed to add file to git");
 
         Command::new("git")
-            .args(&["commit", "-m", "Initial commit"])
+            .args(["commit", "-m", "Initial commit"])
             .current_dir(&path)
             .output()
             .expect("Failed to make initial commit");

@@ -29,7 +29,7 @@ impl<T: GitExecutor> SubtreeManager for GitSubtreeManager<T> {
         let prefix_arg = format!("--prefix={}", prefix);
         self.executor.execute_git_command(
             &["subtree", "split", &prefix_arg, "-b", branch],
-            &self.working_dir
+            &self.working_dir,
         )?;
 
         Ok(())
@@ -45,7 +45,8 @@ impl<T: GitExecutor> SubtreeManager for GitSubtreeManager<T> {
 
         args.push(branch);
 
-        self.executor.execute_git_command(&args, &self.working_dir)?;
+        self.executor
+            .execute_git_command(&args, &self.working_dir)?;
 
         Ok(())
     }
@@ -55,7 +56,7 @@ impl<T: GitExecutor> SubtreeManager for GitSubtreeManager<T> {
         let prefix_arg = format!("--prefix={}", prefix);
         self.executor.execute_git_command(
             &["subtree", "pull", &prefix_arg, "--squash", branch],
-            &self.working_dir
+            &self.working_dir,
         )?;
 
         Ok(())
@@ -71,14 +72,13 @@ impl<T: GitExecutor> SubtreeManager for GitSubtreeManager<T> {
         if subtree_path.exists() {
             fs::remove_dir_all(&subtree_path).map_err(|e| CliError::FileSystem {
                 message: format!("Failed to remove subtree directory '{}': {}", prefix, e),
-                suggestion: "Check file permissions and ensure the directory is not in use".to_string(),
+                suggestion: "Check file permissions and ensure the directory is not in use"
+                    .to_string(),
             })?;
 
             // Stage the removal
-            self.executor.execute_git_command(
-                &["add", prefix],
-                &self.working_dir
-            )?;
+            self.executor
+                .execute_git_command(&["add", prefix], &self.working_dir)?;
         }
 
         Ok(())
@@ -89,9 +89,9 @@ impl<T: GitExecutor> SubtreeManager for GitSubtreeManager<T> {
 mod tests {
     use super::*;
     use crate::git::SystemGitExecutor;
-    use tempfile::TempDir;
-    use std::process::Command;
     use std::fs;
+    use std::process::Command;
+    use tempfile::TempDir;
 
     fn create_test_git_repo_with_subtree() -> (TempDir, std::path::PathBuf) {
         let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -99,20 +99,20 @@ mod tests {
 
         // Initialize git repository
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(&path)
             .output()
             .expect("Failed to initialize git repository");
 
         // Configure git user
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user email");
@@ -121,17 +121,16 @@ mod tests {
         fs::create_dir_all(path.join("subdir")).expect("Failed to create subdir");
         fs::write(path.join("subdir/file.txt"), "subtree content")
             .expect("Failed to create subtree file");
-        fs::write(path.join("main.txt"), "main content")
-            .expect("Failed to create main file");
+        fs::write(path.join("main.txt"), "main content").expect("Failed to create main file");
 
         Command::new("git")
-            .args(&["add", "."])
+            .args(["add", "."])
             .current_dir(&path)
             .output()
             .expect("Failed to add files to git");
 
         Command::new("git")
-            .args(&["commit", "-m", "Initial commit with subtree content"])
+            .args(["commit", "-m", "Initial commit with subtree content"])
             .current_dir(&path)
             .output()
             .expect("Failed to make initial commit");
@@ -150,7 +149,7 @@ mod tests {
 
         // Verify the branch was created
         let output = Command::new("git")
-            .args(&["branch", "--list", "subtree-branch"])
+            .args(["branch", "--list", "subtree-branch"])
             .current_dir(&repo_path)
             .output()
             .expect("Failed to list branches");

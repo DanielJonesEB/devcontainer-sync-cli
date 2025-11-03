@@ -5,7 +5,12 @@ use std::time::Duration;
 
 pub trait GitExecutor {
     fn execute_git_command(&self, args: &[&str], working_dir: &Path) -> Result<String, CliError>;
-    fn execute_git_command_with_timeout(&self, args: &[&str], working_dir: &Path, timeout: Duration) -> Result<String, CliError>;
+    fn execute_git_command_with_timeout(
+        &self,
+        args: &[&str],
+        working_dir: &Path,
+        timeout: Duration,
+    ) -> Result<String, CliError>;
 }
 
 pub struct SystemGitExecutor;
@@ -21,7 +26,12 @@ impl GitExecutor for SystemGitExecutor {
         self.execute_git_command_with_timeout(args, working_dir, Duration::from_secs(30))
     }
 
-    fn execute_git_command_with_timeout(&self, args: &[&str], working_dir: &Path, _timeout: Duration) -> Result<String, CliError> {
+    fn execute_git_command_with_timeout(
+        &self,
+        args: &[&str],
+        working_dir: &Path,
+        _timeout: Duration,
+    ) -> Result<String, CliError> {
         let mut command = Command::new("git");
         command
             .args(args)
@@ -40,8 +50,15 @@ impl GitExecutor for SystemGitExecutor {
 
         if !output.status.success() {
             return Err(CliError::GitOperation {
-                message: format!("Git command failed: git {}\nError: {}", args.join(" "), stderr),
-                suggestion: format!("Check the git command syntax and repository state. Command: git {}", args.join(" ")),
+                message: format!(
+                    "Git command failed: git {}\nError: {}",
+                    args.join(" "),
+                    stderr
+                ),
+                suggestion: format!(
+                    "Check the git command syntax and repository state. Command: git {}",
+                    args.join(" ")
+                ),
             });
         }
 
@@ -58,8 +75,8 @@ impl Default for SystemGitExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::fs;
+    use tempfile::TempDir;
 
     fn create_test_git_repo() -> (TempDir, std::path::PathBuf) {
         let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -67,36 +84,35 @@ mod tests {
 
         // Initialize git repository
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(&path)
             .output()
             .expect("Failed to initialize git repository");
 
         // Configure git user
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user email");
 
         // Create a test file and make initial commit
-        fs::write(path.join("test.txt"), "test content")
-            .expect("Failed to create test file");
+        fs::write(path.join("test.txt"), "test content").expect("Failed to create test file");
 
         Command::new("git")
-            .args(&["add", "test.txt"])
+            .args(["add", "test.txt"])
             .current_dir(&path)
             .output()
             .expect("Failed to add file to git");
 
         Command::new("git")
-            .args(&["commit", "-m", "Initial commit"])
+            .args(["commit", "-m", "Initial commit"])
             .current_dir(&path)
             .output()
             .expect("Failed to make initial commit");
@@ -149,7 +165,7 @@ mod tests {
         let result = executor.execute_git_command_with_timeout(
             &["log", "--oneline"],
             &repo_path,
-            Duration::from_secs(5)
+            Duration::from_secs(5),
         );
         assert!(result.is_ok());
         assert!(result.unwrap().contains("Initial commit"));

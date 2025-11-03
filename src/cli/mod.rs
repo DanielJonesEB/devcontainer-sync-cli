@@ -1,7 +1,10 @@
-use crate::error::CliError;
-use crate::types::CommandContext;
-use crate::git::{RepositoryValidator, GitRepositoryValidator, SystemGitExecutor, GitExecutor, GitRemoteManager, GitBranchManager, GitSubtreeManager, RemoteManager, BranchManager, SubtreeManager};
 use crate::config::*;
+use crate::error::CliError;
+use crate::git::{
+    BranchManager, GitBranchManager, GitExecutor, GitRemoteManager, GitRepositoryValidator,
+    GitSubtreeManager, RemoteManager, RepositoryValidator, SubtreeManager, SystemGitExecutor,
+};
+use crate::types::CommandContext;
 use std::env;
 
 pub struct CliApp {
@@ -38,16 +41,20 @@ impl CliApp {
             io::stdout().flush().unwrap();
 
             let mut input = String::new();
-            io::stdin().read_line(&mut input).map_err(|e| CliError::FileSystem {
-                message: format!("Failed to read user input: {}", e),
-                suggestion: "Try running the command again".to_string(),
-            })?;
+            io::stdin()
+                .read_line(&mut input)
+                .map_err(|e| CliError::FileSystem {
+                    message: format!("Failed to read user input: {}", e),
+                    suggestion: "Try running the command again".to_string(),
+                })?;
 
             let input = input.trim().to_lowercase();
             if input != "y" && input != "yes" {
                 return Err(CliError::Repository {
                     message: "Operation cancelled by user".to_string(),
-                    suggestion: "Use --force flag to skip confirmation or backup existing files first".to_string(),
+                    suggestion:
+                        "Use --force flag to skip confirmation or backup existing files first"
+                            .to_string(),
                 });
             }
         }
@@ -156,7 +163,9 @@ impl CliApp {
         // Display summary of changes
         println!("\n✅ Successfully initialized devcontainer sync!");
         println!("📁 Created .devcontainer directory with Claude Code configurations");
-        println!("🔗 Added 'claude' remote pointing to https://github.com/anthropics/claude-code.git");
+        println!(
+            "🔗 Added 'claude' remote pointing to https://github.com/anthropics/claude-code.git"
+        );
         println!("🌿 Created tracking branch 'claude-main' for future updates");
         println!("\nNext steps:");
         println!("  • Run 'devcontainer-sync update' to get the latest configurations");
@@ -223,7 +232,10 @@ impl CliApp {
 
         // Reset to latest remote state
         let executor = SystemGitExecutor::new();
-        executor.execute_git_command(&["reset", "--hard", CLAUDE_REMOTE_BRANCH], &self.context.working_dir)?;
+        executor.execute_git_command(
+            &["reset", "--hard", CLAUDE_REMOTE_BRANCH],
+            &self.context.working_dir,
+        )?;
         if !self.context.verbose {
             println!("✓");
         }
@@ -263,7 +275,16 @@ impl CliApp {
         }
         // Use git subtree merge to update the existing subtree
         let executor = SystemGitExecutor::new();
-        executor.execute_git_command(&["subtree", "merge", "--prefix=.devcontainer", "--squash", DEVCONTAINER_UPDATED_BRANCH], &self.context.working_dir)?;
+        executor.execute_git_command(
+            &[
+                "subtree",
+                "merge",
+                "--prefix=.devcontainer",
+                "--squash",
+                DEVCONTAINER_UPDATED_BRANCH,
+            ],
+            &self.context.working_dir,
+        )?;
         if !self.context.verbose {
             println!("✓");
         }
@@ -345,7 +366,10 @@ impl CliApp {
 
             // Commit the removal
             let executor = SystemGitExecutor::new();
-            executor.execute_git_command(&["commit", "-m", "Remove devcontainer configuration"], &self.context.working_dir)?;
+            executor.execute_git_command(
+                &["commit", "-m", "Remove devcontainer configuration"],
+                &self.context.working_dir,
+            )?;
             if !self.context.verbose {
                 println!("✓");
             }
@@ -367,13 +391,18 @@ impl CliApp {
 
     fn create_backup(&self) -> Result<(), CliError> {
         let devcontainer_path = self.context.working_dir.join(DEVCONTAINER_PREFIX);
-        let backup_path = self.context.working_dir.join(format!("{}.backup", DEVCONTAINER_PREFIX));
+        let backup_path = self
+            .context
+            .working_dir
+            .join(format!("{}.backup", DEVCONTAINER_PREFIX));
 
         // Check if .devcontainer exists
         if !devcontainer_path.exists() {
             return Err(CliError::FileSystem {
                 message: "No .devcontainer directory found to backup".to_string(),
-                suggestion: "Run 'devcontainer-sync init' first to create devcontainer configuration".to_string(),
+                suggestion:
+                    "Run 'devcontainer-sync init' first to create devcontainer configuration"
+                        .to_string(),
             });
         }
 
@@ -386,7 +415,7 @@ impl CliApp {
         }
 
         // Copy .devcontainer to .devcontainer.backup
-        self.copy_directory(&devcontainer_path, &backup_path)?;
+        Self::copy_directory(&devcontainer_path, &backup_path)?;
 
         if self.context.verbose {
             println!("Backup created at: {}", backup_path.display());
@@ -395,7 +424,7 @@ impl CliApp {
         Ok(())
     }
 
-    fn copy_directory(&self, src: &std::path::Path, dst: &std::path::Path) -> Result<(), CliError> {
+    fn copy_directory(src: &std::path::Path, dst: &std::path::Path) -> Result<(), CliError> {
         std::fs::create_dir_all(dst).map_err(|e| CliError::FileSystem {
             message: format!("Failed to create backup directory: {}", e),
             suggestion: "Check file permissions and available disk space".to_string(),
@@ -414,7 +443,7 @@ impl CliApp {
             let dst_path = dst.join(entry.file_name());
 
             if src_path.is_dir() {
-                self.copy_directory(&src_path, &dst_path)?;
+                Self::copy_directory(&src_path, &dst_path)?;
             } else {
                 std::fs::copy(&src_path, &dst_path).map_err(|e| CliError::FileSystem {
                     message: format!("Failed to copy file {}: {}", src_path.display(), e),

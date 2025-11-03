@@ -1,6 +1,6 @@
+use crate::error::CliError;
 use std::path::PathBuf;
 use std::time::Duration;
-use crate::error::CliError;
 
 /// Context for command execution
 #[derive(Debug)]

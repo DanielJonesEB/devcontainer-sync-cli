@@ -5,4 +5,4 @@ pub mod git;
 pub mod types;
 
 pub use error::CliError;
-pub use types::{CommandContext, OperationResult, GitCommand};
+pub use types::{CommandContext, GitCommand, OperationResult};

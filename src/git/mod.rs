@@ -4,8 +4,8 @@ pub mod remote;
 pub mod subtree;
 pub mod validator;
 
-pub use branch::{BranchManager, GitBranchManager, Branch};
+pub use branch::{Branch, BranchManager, GitBranchManager};
 pub use executor::{GitExecutor, SystemGitExecutor};
-pub use remote::{RemoteManager, GitRemoteManager, Remote};
-pub use subtree::{SubtreeManager, GitSubtreeManager};
-pub use validator::{RepositoryValidator, GitRepositoryValidator};
+pub use remote::{GitRemoteManager, Remote, RemoteManager};
+pub use subtree::{GitSubtreeManager, SubtreeManager};
+pub use validator::{GitRepositoryValidator, RepositoryValidator};

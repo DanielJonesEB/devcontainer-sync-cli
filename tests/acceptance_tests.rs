@@ -31,24 +31,27 @@ fn temp_git_repo_without_commits() -> (TempDir, PathBuf) {
 
     // Initialize git repository but don't make any commits
     let output = Command::new("git")
-        .args(&["init"])
+        .args(["init"])
         .current_dir(&path)
         .output()
         .expect("Failed to initialize git repository");
 
     if !output.status.success() {
-        panic!("Failed to initialize git repository: {}", String::from_utf8_lossy(&output.stderr));
+        panic!(
+            "Failed to initialize git repository: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     // Configure git user for the repository
     Command::new("git")
-        .args(&["config", "user.name", "Test User"])
+        .args(["config", "user.name", "Test User"])
         .current_dir(&path)
         .output()
         .expect("Failed to configure git user name");
 
     Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
+        .args(["config", "user.email", "test@example.com"])
         .current_dir(&path)
         .output()
         .expect("Failed to configure git user email");
@@ -64,24 +67,27 @@ fn temp_git_repo_with_commits() -> (TempDir, PathBuf) {
 
     // Initialize git repository
     let output = Command::new("git")
-        .args(&["init"])
+        .args(["init"])
         .current_dir(&path)
         .output()
         .expect("Failed to initialize git repository");
 
     if !output.status.success() {
-        panic!("Failed to initialize git repository: {}", String::from_utf8_lossy(&output.stderr));
+        panic!(
+            "Failed to initialize git repository: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     // Configure git user for the repository
     Command::new("git")
-        .args(&["config", "user.name", "Test User"])
+        .args(["config", "user.name", "Test User"])
         .current_dir(&path)
         .output()
         .expect("Failed to configure git user name");
 
     Command::new("git")
-        .args(&["config", "user.email", "test@example.com"])
+        .args(["config", "user.email", "test@example.com"])
         .current_dir(&path)
         .output()
         .expect("Failed to configure git user email");
@@ -91,19 +97,22 @@ fn temp_git_repo_with_commits() -> (TempDir, PathBuf) {
         .expect("Failed to create test file");
 
     Command::new("git")
-        .args(&["add", "README.md"])
+        .args(["add", "README.md"])
         .current_dir(&path)
         .output()
         .expect("Failed to add file to git");
 
     let output = Command::new("git")
-        .args(&["commit", "-m", "Initial commit"])
+        .args(["commit", "-m", "Initial commit"])
         .current_dir(&path)
         .output()
         .expect("Failed to make initial commit");
 
     if !output.status.success() {
-        panic!("Failed to make initial commit: {}", String::from_utf8_lossy(&output.stderr));
+        panic!(
+            "Failed to make initial commit: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     (temp_dir, path)
@@ -120,12 +129,15 @@ fn compiled_binary() -> PathBuf {
 
     // Compile the binary
     let output = Command::new("cargo")
-        .args(&["build", "--bin", "devcontainer-sync"])
+        .args(["build", "--bin", "devcontainer-sync"])
         .output()
         .expect("Failed to compile binary");
 
     if !output.status.success() {
-        panic!("Failed to compile binary: {}", String::from_utf8_lossy(&output.stderr));
+        panic!(
+            "Failed to compile binary: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
     // Get the binary path
@@ -188,7 +200,7 @@ impl CommandResult {
 #[rstest]
 fn should_fail_when_not_a_git_repository(
     temp_non_git_dir: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, dir_path) = temp_non_git_dir;
 
@@ -202,7 +214,7 @@ fn should_fail_when_not_a_git_repository(
 #[rstest]
 fn should_fail_when_git_repo_has_no_commits(
     temp_git_repo_without_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_without_commits;
 
@@ -216,7 +228,7 @@ fn should_fail_when_git_repo_has_no_commits(
 #[rstest]
 fn should_succeed_when_git_repo_has_commits(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -230,7 +242,7 @@ fn should_succeed_when_git_repo_has_commits(
 #[rstest]
 fn should_create_devcontainer_directory_with_json_file_after_successful_init(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -254,7 +266,7 @@ fn should_create_devcontainer_directory_with_json_file_after_successful_init(
 #[rstest]
 fn should_show_minimal_output_without_verbose_flag(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -264,14 +276,16 @@ fn should_show_minimal_output_without_verbose_flag(
     result.should_contain_in_stdout("Successfully initialized devcontainer sync!");
 
     // Should not contain verbose messages
-    assert!(!result.stdout.contains("Initializing devcontainer sync from Claude Code repository..."));
+    assert!(!result
+        .stdout
+        .contains("Initializing devcontainer sync from Claude Code repository..."));
     assert!(!result.stdout.contains("Adding Claude Code remote..."));
 }
 
 #[rstest]
 fn should_show_detailed_output_with_verbose_flag(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -280,7 +294,8 @@ fn should_show_detailed_output_with_verbose_flag(
     result.should_succeed();
 
     // Check all verbose messages are present in order
-    result.should_contain_in_stdout("Initializing devcontainer sync from Claude Code repository...");
+    result
+        .should_contain_in_stdout("Initializing devcontainer sync from Claude Code repository...");
     result.should_contain_in_stdout("Adding Claude Code remote...");
     result.should_contain_in_stdout("Fetching from Claude Code repository...");
     result.should_contain_in_stdout("Creating tracking branch...");
@@ -297,7 +312,7 @@ fn should_show_detailed_output_with_verbose_flag(
 #[rstest]
 fn should_fail_update_command_when_not_initialized(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -311,7 +326,7 @@ fn should_fail_update_command_when_not_initialized(
 #[rstest]
 fn should_succeed_update_command_after_init(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -328,7 +343,7 @@ fn should_succeed_update_command_after_init(
 #[rstest]
 fn should_show_verbose_output_for_update_command(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -351,7 +366,7 @@ fn should_show_verbose_output_for_update_command(
 #[rstest]
 fn should_fail_remove_command_when_not_initialized(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -365,7 +380,7 @@ fn should_fail_remove_command_when_not_initialized(
 #[rstest]
 fn should_succeed_remove_command_after_init(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -388,7 +403,7 @@ fn should_succeed_remove_command_after_init(
 #[rstest]
 fn should_show_verbose_output_for_remove_command(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -411,7 +426,7 @@ fn should_show_verbose_output_for_remove_command(
 #[rstest]
 fn should_create_backup_when_backup_flag_is_used(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -441,8 +456,8 @@ fn should_create_backup_when_backup_flag_is_used(
     // Verify backup contains the modified file
     let backup_json = backup_dir.join("devcontainer.json");
     if backup_json.exists() {
-        let backup_content = std::fs::read_to_string(&backup_json)
-            .expect("Failed to read backup file");
+        let backup_content =
+            std::fs::read_to_string(&backup_json).expect("Failed to read backup file");
         assert_that(&backup_content).contains("modified-for-test");
     }
 }
@@ -450,7 +465,7 @@ fn should_create_backup_when_backup_flag_is_used(
 #[rstest]
 fn should_show_backup_message_in_verbose_mode(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -459,16 +474,21 @@ fn should_show_backup_message_in_verbose_mode(
     init_result.should_succeed();
 
     // Run update with backup and verbose flags
-    let update_result = run_command(&compiled_binary, &["update", "--backup", "--verbose"], &repo_path);
+    let update_result = run_command(
+        &compiled_binary,
+        &["update", "--backup", "--verbose"],
+        &repo_path,
+    );
     update_result.should_succeed();
-    update_result.should_contain_in_stdout("Creating backup of existing devcontainer configuration...");
+    update_result
+        .should_contain_in_stdout("Creating backup of existing devcontainer configuration...");
     update_result.should_contain_in_stdout("Backup created before update");
 }
 
 #[rstest]
 fn should_not_create_backup_when_backup_flag_is_not_used(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -492,7 +512,7 @@ fn should_not_create_backup_when_backup_flag_is_not_used(
 #[rstest]
 fn should_handle_backup_creation_failure_gracefully(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -502,8 +522,7 @@ fn should_handle_backup_creation_failure_gracefully(
 
     // Create a file where backup directory should be to cause conflict
     let backup_path = repo_path.join(".devcontainer.backup");
-    std::fs::write(&backup_path, "blocking file")
-        .expect("Failed to create blocking file");
+    std::fs::write(&backup_path, "blocking file").expect("Failed to create blocking file");
 
     // Run update with backup flag - should handle the error gracefully
     let update_result = run_command(&compiled_binary, &["update", "--backup"], &repo_path);
@@ -513,7 +532,9 @@ fn should_handle_backup_creation_failure_gracefully(
         update_result.should_contain_in_stderr("backup");
     } else {
         // If it succeeds, it should warn about backup issues
-        assert!(update_result.stderr.contains("backup") || update_result.stdout.contains("warning"));
+        assert!(
+            update_result.stderr.contains("backup") || update_result.stdout.contains("warning")
+        );
     }
 }
 
@@ -524,7 +545,7 @@ fn should_handle_backup_creation_failure_gracefully(
 #[rstest]
 fn should_handle_invalid_command_gracefully(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -537,7 +558,7 @@ fn should_handle_invalid_command_gracefully(
 #[rstest]
 fn should_show_help_when_no_command_provided(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
@@ -550,7 +571,7 @@ fn should_show_help_when_no_command_provided(
 #[rstest]
 fn should_show_version_information(
     temp_git_repo_with_commits: (TempDir, PathBuf),
-    compiled_binary: PathBuf
+    compiled_binary: PathBuf,
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 

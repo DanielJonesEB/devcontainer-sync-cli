@@ -29,7 +29,7 @@ impl RepositoryValidator for GitRepositoryValidator {
 
         // Also check if git command recognizes this as a valid repository
         let output = Command::new("git")
-            .args(&["rev-parse", "--git-dir"])
+            .args(["rev-parse", "--git-dir"])
             .current_dir(path)
             .output()
             .map_err(|e| CliError::GitOperation {
@@ -46,7 +46,7 @@ impl RepositoryValidator for GitRepositoryValidator {
 
     fn check_existing_remote(&self, remote_name: &str) -> Result<bool, CliError> {
         let output = Command::new("git")
-            .args(&["remote", "get-url", remote_name])
+            .args(["remote", "get-url", remote_name])
             .current_dir(&self.working_dir)
             .output()
             .map_err(|e| CliError::GitOperation {
@@ -59,7 +59,11 @@ impl RepositoryValidator for GitRepositoryValidator {
 
     fn check_existing_branch(&self, branch_name: &str) -> Result<bool, CliError> {
         let output = Command::new("git")
-            .args(&["show-ref", "--verify", &format!("refs/heads/{}", branch_name)])
+            .args([
+                "show-ref",
+                "--verify",
+                &format!("refs/heads/{}", branch_name),
+            ])
             .current_dir(&self.working_dir)
             .output()
             .map_err(|e| CliError::GitOperation {
@@ -72,7 +76,7 @@ impl RepositoryValidator for GitRepositoryValidator {
 
     fn validate_has_commits(&self) -> Result<(), CliError> {
         let output = Command::new("git")
-            .args(&["rev-parse", "HEAD"])
+            .args(["rev-parse", "HEAD"])
             .current_dir(&self.working_dir)
             .output()
             .map_err(|e| CliError::GitOperation {
@@ -91,9 +95,9 @@ impl RepositoryValidator for GitRepositoryValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
-    use std::process::Command;
     use std::fs;
+    use std::process::Command;
+    use tempfile::TempDir;
 
     fn create_temp_git_repo(with_commits: bool) -> (TempDir, std::path::PathBuf) {
         let temp_dir = TempDir::new().expect("Failed to create temp directory");
@@ -101,37 +105,36 @@ mod tests {
 
         // Initialize git repository
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(&path)
             .output()
             .expect("Failed to initialize git repository");
 
         // Configure git user
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(&path)
             .output()
             .expect("Failed to configure git user email");
 
         if with_commits {
             // Create a test file and make initial commit
-            fs::write(path.join("test.txt"), "test content")
-                .expect("Failed to create test file");
+            fs::write(path.join("test.txt"), "test content").expect("Failed to create test file");
 
             Command::new("git")
-                .args(&["add", "test.txt"])
+                .args(["add", "test.txt"])
                 .current_dir(&path)
                 .output()
                 .expect("Failed to add file to git");
 
             Command::new("git")
-                .args(&["commit", "-m", "Initial commit"])
+                .args(["commit", "-m", "Initial commit"])
                 .current_dir(&path)
                 .output()
                 .expect("Failed to make initial commit");
@@ -196,7 +199,7 @@ mod tests {
 
         let result = validator.check_existing_remote("nonexistent");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), false);
+        assert!(!result.unwrap());
     }
 
     #[test]
@@ -206,6 +209,6 @@ mod tests {
 
         let result = validator.check_existing_branch("nonexistent");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), false);
+        assert!(!result.unwrap());
     }
 }

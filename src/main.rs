@@ -13,8 +13,6 @@ struct Cli {
     /// Enable verbose output
     #[arg(short, long, global = true)]
     verbose: bool,
-
-
 }
 
 #[derive(Subcommand)]
