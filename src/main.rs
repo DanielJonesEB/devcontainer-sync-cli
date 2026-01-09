@@ -18,7 +18,11 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize devcontainer tracking from Claude Code repository
-    Init,
+    Init {
+        /// Remove firewall configurations from devcontainer files
+        #[arg(long)]
+        strip_firewall: bool,
+    },
     /// Update existing devcontainer configurations
     Update {
         /// Create backup before updating
@@ -27,6 +31,9 @@ enum Commands {
         /// Force update even if conflicts exist
         #[arg(long)]
         force: bool,
+        /// Remove firewall configurations from devcontainer files
+        #[arg(long)]
+        strip_firewall: bool,
     },
     /// Remove devcontainer tracking and cleanup
     Remove {
@@ -42,8 +49,8 @@ fn main() {
     let app = CliApp::new(cli.verbose);
 
     let result = match cli.command {
-        Commands::Init => app.init(),
-        Commands::Update { backup, force } => app.update(backup, force),
+        Commands::Init { strip_firewall } => app.init(strip_firewall),
+        Commands::Update { backup, force, strip_firewall } => app.update(backup, force, strip_firewall),
         Commands::Remove { keep_files } => app.remove(keep_files),
     };
 

@@ -2,7 +2,7 @@
 
 A CLI tool for syncing devcontainer configurations from the Claude Code repository.
 
-⚠️ At the time of writing, the implementation will include a `iptables`-based firewall.
+⚠️ At the time of writing, the implementation will include a `iptables`-based firewall. Use `--strip-firewall` to remove it if not needed.
 
 ## Usage
 
@@ -10,8 +10,14 @@ A CLI tool for syncing devcontainer configurations from the Claude Code reposito
 # Initialize devcontainer sync in your git repository
 devcontainer-sync init
 
+# Initialize without firewall configurations
+devcontainer-sync init --strip-firewall
+
 # Update to latest devcontainer configurations
 devcontainer-sync update
+
+# Update and remove firewall configurations
+devcontainer-sync update --strip-firewall
 
 # Remove devcontainer sync (keeps files by default)
 devcontainer-sync remove
@@ -20,6 +26,7 @@ devcontainer-sync remove
 ## Options
 
 - `--verbose, -v`: Show detailed output
+- `--strip-firewall`: Remove firewall configurations from devcontainer files (init/update only)
 - `update --backup`: Create backup before updating
 - `remove --keep-files`: Keep devcontainer files when removing sync
 

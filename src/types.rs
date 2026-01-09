@@ -3,10 +3,11 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// Context for command execution
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CommandContext {
     pub working_dir: PathBuf,
     pub verbose: bool,
+    pub strip_firewall: bool,
     pub timeout: Duration,
 }
 
@@ -15,8 +16,14 @@ impl CommandContext {
         Self {
             working_dir,
             verbose,
+            strip_firewall: false,
             timeout: crate::config::default_timeout(),
         }
+    }
+
+    pub fn with_strip_firewall(mut self, strip_firewall: bool) -> Self {
+        self.strip_firewall = strip_firewall;
+        self
     }
 }
 

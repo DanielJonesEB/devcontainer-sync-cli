@@ -160,26 +160,26 @@
     - _Requirements: 2.2_
 
 - [ ] 11. Add firewall stripping functionality
-  - [ ] 11.1 Extend CLI interface to support --strip-firewall flag
+  - [x] 11.1 Extend CLI interface to support --strip-firewall flag
     - Add --strip-firewall flag to init and update commands using clap
     - Update CommandContext to include strip_firewall boolean field
     - Modify command parsing to handle the new flag
     - _Requirements: 5.1_
 
-  - [ ] 11.2 Implement DevcontainerCustomizer trait and core functionality
+  - [x] 11.2 Implement DevcontainerCustomizer trait and core functionality
     - Create DevcontainerCustomizer trait with pattern-based detection methods
     - Implement FirewallRemovalResult struct for tracking changes and warnings
     - Add regex-based pattern matching for firewall components
     - Create validation methods for reporting missing patterns
     - _Requirements: 5.1, 5.7_
 
-  - [ ] 11.3 Implement firewall script detection and removal
+  - [x] 11.3 Implement firewall script detection and removal
     - Write detect_firewall_scripts method using flexible pattern matching
     - Implement script file removal with validation
     - Add logging for script removal operations
     - _Requirements: 5.1, 5.5_
 
-  - [ ] 11.4 Implement devcontainer.json firewall stripping
+  - [x] 11.4 Implement devcontainer.json firewall stripping
     - Write JSON parsing and modification logic for devcontainer.json
     - Remove postStartCommand and waitFor keys when they reference firewall scripts
     - Remove firewall capabilities (NET_ADMIN, NET_RAW) from runArgs
@@ -187,7 +187,7 @@
     - Add validation and warning reporting for missing patterns
     - _Requirements: 5.1, 5.2, 5.3, 5.7_
 
-  - [ ] 11.5 Implement Dockerfile firewall stripping
+  - [x] 11.5 Implement Dockerfile firewall stripping
     - Write Dockerfile parsing and modification logic
     - Remove firewall packages from apt install commands using pattern matching
     - Remove firewall setup sections (COPY script, sudoers configuration)
@@ -195,14 +195,14 @@
     - Add validation and warning reporting for missing patterns
     - _Requirements: 5.2, 5.3, 5.7_
 
-  - [ ] 11.6 Integrate firewall stripping into init and update commands
+  - [x] 11.6 Integrate firewall stripping into init and update commands
     - Modify init command to call firewall stripping when --strip-firewall flag is present
     - Modify update command to call firewall stripping when --strip-firewall flag is present
     - Add git commit creation for firewall customizations
     - Include warnings in commit messages when patterns aren't found
     - _Requirements: 5.4, 5.5_
 
-  - [ ] 11.7 Write property-based tests for firewall stripping
+  - [x] 11.7 Write property-based tests for firewall stripping
     - **Property 1: Firewall pattern detection and removal**
     - **Validates: Requirements 5.1, 5.2**
     - **Property 2: Graceful handling of missing patterns**
@@ -214,14 +214,14 @@
     - **Property 5: Non-firewall functionality preservation with validation**
     - **Validates: Requirements 5.6**
 
-  - [ ] 11.8 Write unit tests for firewall customization components
+  - [x] 11.8 Write unit tests for firewall customization components
     - Test DevcontainerCustomizer trait methods independently
     - Test pattern matching logic with various firewall configurations
     - Test graceful degradation when patterns don't match
     - Test JSON and Dockerfile modification logic
     - _Requirements: 5.1, 5.2, 5.3, 5.7_
 
-  - [ ] 11.9 Write acceptance tests for firewall stripping functionality
+  - [x] 11.9 Write acceptance tests for firewall stripping functionality
     - Test init command with --strip-firewall flag removes firewall components
     - Test init command without flag preserves firewall components
     - Test update command with --strip-firewall flag removes firewall components
@@ -233,13 +233,13 @@
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.7_
 
 - [ ] 12. Final integration and testing
-  - [ ] 12.1 Integration testing with real devcontainer configurations
+  - [x] 12.1 Integration testing with real devcontainer configurations
     - Test against actual Claude Code devcontainer configurations
     - Validate firewall stripping works with current upstream implementation
     - Test resilience to minor upstream changes
     - _Requirements: 5.6, 5.7_
 
-  - [ ] 12.2 Documentation and user experience improvements
+  - [x] 12.2 Documentation and user experience improvements
     - Update help text to document --strip-firewall flag
     - Add clear logging messages for firewall stripping operations
     - Document pattern-based detection approach for future maintenance
