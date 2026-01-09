@@ -23,6 +23,9 @@ The tool eliminates the need to manually execute these multiple Git commands by 
 - **Target Repository**: The user's Git repository where devcontainer configurations will be integrated
 - **Git Subtree**: A Git feature that allows embedding one repository inside another as a subdirectory
 - **Devcontainer Configuration**: Files in the .devcontainer directory that define development environment settings
+- **Firewall Features**: Components like iptables firewall configurations that provide container security but may not be desired in all development environments
+- **Feature Stripping**: The process of selectively removing specific functionality from devcontainer configurations while preserving core development environment setup
+- **Pattern-Based Detection**: A resilient approach to identifying firewall components using flexible patterns rather than hardcoded strings, allowing the tool to adapt to upstream changes
 
 ## Requirements
 
@@ -79,6 +82,20 @@ The tool eliminates the need to manually execute these multiple Git commands by 
 6. IF the target repository already has devcontainer configurations, THEN THE CLI Tool SHALL prompt for confirmation before overwriting
 
 ### Requirement 5
+
+**User Story:** As a developer, I want to customize devcontainer configurations during sync, so that I can exclude unwanted features like security policies that don't fit my development environment.
+
+#### Acceptance Criteria
+
+1. WHEN the CLI tool is executed with init or update commands and the --strip-firewall flag, THE CLI Tool SHALL remove iptables firewall configurations from devcontainer files
+2. WHEN firewall features are stripped, THE CLI Tool SHALL remove or comment out iptables-related commands from Dockerfile and docker-compose files
+3. WHEN firewall features are stripped, THE CLI Tool SHALL remove firewall-related environment variables and configuration sections
+4. WHEN modifications are made to devcontainer files, THE CLI Tool SHALL create a git commit with a descriptive message indicating the customizations applied
+5. WHEN the --strip-firewall flag is used, THE CLI Tool SHALL log all modifications made to devcontainer files for user review
+6. THE CLI Tool SHALL preserve all other devcontainer functionality while removing only the specified firewall features
+7. WHEN expected firewall patterns are not found in devcontainer files, THE CLI Tool SHALL continue processing other patterns and report warnings about missing patterns rather than failing completely
+
+### Requirement 6
 
 **User Story:** As a developer, I want to remove devcontainer tracking, so that I can clean up my repository if I no longer need the Claude Code configurations.
 
