@@ -1,6 +1,6 @@
 [package]
 name = "devcontainer-sync-cli"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["Daniel Jones <daniel@re-cinq.com>"]
 description = "A CLI tool for syncing devcontainer configurations from Claude Code repository"
