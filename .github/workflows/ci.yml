@@ -78,7 +78,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
-      release_sha: ${{ steps.push.outputs.release_sha }}
 
     steps:
       - name: Checkout repository
@@ -117,9 +116,14 @@ jobs:
       - name: Create and push tag
         id: push
         run: |
-          git tag "v${{ steps.bump.outputs.new_version }}"
-          git push origin master --follow-tags
-          echo "release_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          VERSION="v${{ steps.bump.outputs.new_version }}"
+          SHA=$(git rev-parse HEAD)
+          echo "Creating annotated tag $VERSION at $SHA"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin master
+          git push origin "$VERSION"
+          echo "release_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Pushed SHA: $SHA"
 
   build:
     name: Build Release Binaries
@@ -140,7 +144,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          ref: ${{ needs.release.outputs.release_sha }}
+          ref: v${{ needs.release.outputs.new_version }}
+          fetch-tags: true
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
@@ -218,8 +223,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          ref: ${{ needs.release.outputs.release_sha }}
+          ref: v${{ needs.release.outputs.new_version }}
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Download all artifacts
         uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
