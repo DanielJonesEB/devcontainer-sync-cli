@@ -5,6 +5,8 @@ pub mod error;
 pub mod git;
 pub mod types;
 
+pub use customizer::{
+    DefaultDevcontainerCustomizer, DevcontainerCustomizer, FirewallRemovalResult,
+};
 pub use error::CliError;
 pub use types::{CommandContext, GitCommand, OperationResult};
-pub use customizer::{DevcontainerCustomizer, DefaultDevcontainerCustomizer, FirewallRemovalResult};

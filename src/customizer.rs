@@ -5,7 +5,10 @@ use std::path::{Path, PathBuf};
 /// Trait for customizing devcontainer configurations
 pub trait DevcontainerCustomizer {
     /// Strip firewall features from devcontainer directory
-    fn strip_firewall_features(&self, devcontainer_path: &Path) -> Result<FirewallRemovalResult, CliError>;
+    fn strip_firewall_features(
+        &self,
+        devcontainer_path: &Path,
+    ) -> Result<FirewallRemovalResult, CliError>;
 
     /// Detect firewall scripts using flexible pattern matching
     fn detect_firewall_scripts(&self, devcontainer_path: &Path) -> Result<Vec<PathBuf>, CliError>;
@@ -24,7 +27,7 @@ pub trait DevcontainerCustomizer {
 }
 
 /// Result of firewall removal operation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FirewallRemovalResult {
     pub files_modified: Vec<PathBuf>,
     pub files_removed: Vec<PathBuf>,
@@ -171,7 +174,10 @@ impl DefaultDevcontainerCustomizer {
 }
 
 impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
-    fn strip_firewall_features(&self, devcontainer_path: &Path) -> Result<FirewallRemovalResult, CliError> {
+    fn strip_firewall_features(
+        &self,
+        devcontainer_path: &Path,
+    ) -> Result<FirewallRemovalResult, CliError> {
         let mut result = FirewallRemovalResult::new();
 
         self.log_verbose("Starting firewall feature stripping...");
@@ -181,7 +187,11 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
         for script in scripts {
             if script.exists() {
                 std::fs::remove_file(&script).map_err(|e| CliError::FileSystem {
-                    message: format!("Failed to remove firewall script {}: {}", script.display(), e),
+                    message: format!(
+                        "Failed to remove firewall script {}: {}",
+                        script.display(),
+                        e
+                    ),
                     suggestion: "Check file permissions and try again".to_string(),
                 })?;
                 result.add_removed_file(script.clone());
@@ -251,7 +261,9 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
         if let Ok(entries) = std::fs::read_dir(devcontainer_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.extension().and_then(|s| s.to_str()) == Some("sh") && !scripts.contains(&path) {
+                if path.extension().and_then(|s| s.to_str()) == Some("sh")
+                    && !scripts.contains(&path)
+                {
                     if let Ok(content) = std::fs::read_to_string(&path) {
                         let matches = self.matches_firewall_patterns(&content)?;
                         if !matches.is_empty() {
@@ -271,10 +283,11 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
             suggestion: "Check file permissions and ensure the file exists".to_string(),
         })?;
 
-        let mut json: serde_json::Value = serde_json::from_str(&content).map_err(|e| CliError::Repository {
-            message: format!("Invalid JSON in devcontainer.json: {}", e),
-            suggestion: "Fix JSON syntax errors in devcontainer.json".to_string(),
-        })?;
+        let mut json: serde_json::Value =
+            serde_json::from_str(&content).map_err(|e| CliError::Repository {
+                message: format!("Invalid JSON in devcontainer.json: {}", e),
+                suggestion: "Fix JSON syntax errors in devcontainer.json".to_string(),
+            })?;
 
         let mut changes = Vec::new();
 
@@ -283,7 +296,8 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
             let original_len = run_args.len();
             run_args.retain(|arg| {
                 if let Some(arg_str) = arg.as_str() {
-                    !arg_str.contains("--cap-add=NET_ADMIN") && !arg_str.contains("--cap-add=NET_RAW")
+                    !arg_str.contains("--cap-add=NET_ADMIN")
+                        && !arg_str.contains("--cap-add=NET_RAW")
                 } else {
                     true
                 }
@@ -311,27 +325,32 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
 
         // Write back the modified JSON if there were changes
         if !changes.is_empty() {
-            let modified_content = serde_json::to_string_pretty(&json).map_err(|e| CliError::Repository {
-                message: format!("Failed to serialize modified JSON: {}", e),
-                suggestion: "This is likely a bug in the JSON modification logic".to_string(),
-            })?;
+            let modified_content =
+                serde_json::to_string_pretty(&json).map_err(|e| CliError::Repository {
+                    message: format!("Failed to serialize modified JSON: {}", e),
+                    suggestion: "This is likely a bug in the JSON modification logic".to_string(),
+                })?;
 
             std::fs::write(json_path, modified_content).map_err(|e| CliError::FileSystem {
                 message: format!("Failed to write modified devcontainer.json: {}", e),
                 suggestion: "Check file permissions and available disk space".to_string(),
             })?;
 
-            self.log_verbose(&format!("Modified devcontainer.json: {}", changes.join(", ")));
+            self.log_verbose(&format!(
+                "Modified devcontainer.json: {}",
+                changes.join(", ")
+            ));
         }
 
         Ok(changes)
     }
 
     fn strip_dockerfile_firewall(&self, dockerfile_path: &Path) -> Result<Vec<String>, CliError> {
-        let content = std::fs::read_to_string(dockerfile_path).map_err(|e| CliError::FileSystem {
-            message: format!("Failed to read Dockerfile: {}", e),
-            suggestion: "Check file permissions and ensure the file exists".to_string(),
-        })?;
+        let content =
+            std::fs::read_to_string(dockerfile_path).map_err(|e| CliError::FileSystem {
+                message: format!("Failed to read Dockerfile: {}", e),
+                suggestion: "Check file permissions and ensure the file exists".to_string(),
+            })?;
 
         let lines: Vec<&str> = content.lines().collect();
         let mut modified_lines = Vec::new();
@@ -401,9 +420,11 @@ impl DevcontainerCustomizer for DefaultDevcontainerCustomizer {
         // Write back the modified Dockerfile if there were changes
         if !changes.is_empty() {
             let modified_content = modified_lines.join("\n");
-            std::fs::write(dockerfile_path, modified_content).map_err(|e| CliError::FileSystem {
-                message: format!("Failed to write modified Dockerfile: {}", e),
-                suggestion: "Check file permissions and available disk space".to_string(),
+            std::fs::write(dockerfile_path, modified_content).map_err(|e| {
+                CliError::FileSystem {
+                    message: format!("Failed to write modified Dockerfile: {}", e),
+                    suggestion: "Check file permissions and available disk space".to_string(),
+                }
             })?;
 
             self.log_verbose(&format!("Modified Dockerfile: {}", changes.join(", ")));
@@ -471,7 +492,9 @@ mod tests {
         fs::write(&script_path, "#!/bin/bash\niptables -F\n").unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let scripts = customizer.detect_firewall_scripts(devcontainer_path).unwrap();
+        let scripts = customizer
+            .detect_firewall_scripts(devcontainer_path)
+            .unwrap();
 
         assert_eq!(scripts.len(), 1);
         assert_eq!(scripts[0], script_path);
@@ -484,10 +507,16 @@ mod tests {
 
         // Create a script with firewall content but different name
         let script_path = devcontainer_path.join("setup.sh");
-        fs::write(&script_path, "#!/bin/bash\necho 'Setting up iptables'\niptables -A INPUT -j DROP\n").unwrap();
+        fs::write(
+            &script_path,
+            "#!/bin/bash\necho 'Setting up iptables'\niptables -A INPUT -j DROP\n",
+        )
+        .unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let scripts = customizer.detect_firewall_scripts(devcontainer_path).unwrap();
+        let scripts = customizer
+            .detect_firewall_scripts(devcontainer_path)
+            .unwrap();
 
         assert_eq!(scripts.len(), 1);
         assert_eq!(scripts[0], script_path);
@@ -503,7 +532,9 @@ mod tests {
         fs::write(&script_path, "#!/bin/bash\necho 'Hello world'\n").unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let scripts = customizer.detect_firewall_scripts(devcontainer_path).unwrap();
+        let scripts = customizer
+            .detect_firewall_scripts(devcontainer_path)
+            .unwrap();
 
         assert_eq!(scripts.len(), 0);
     }
@@ -547,7 +578,9 @@ mod tests {
         fs::write(&json_path, json_content).unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let changes = customizer.strip_devcontainer_json_firewall(&json_path).unwrap();
+        let changes = customizer
+            .strip_devcontainer_json_firewall(&json_path)
+            .unwrap();
 
         assert!(!changes.is_empty());
         assert!(changes.iter().any(|c| c.contains("NET_ADMIN")));
@@ -560,10 +593,16 @@ mod tests {
 
         // Check that firewall capabilities were removed
         if let Some(run_args) = modified_json.get("runArgs").and_then(|v| v.as_array()) {
-            assert!(!run_args.iter().any(|arg| arg.as_str().unwrap_or("").contains("NET_ADMIN")));
-            assert!(!run_args.iter().any(|arg| arg.as_str().unwrap_or("").contains("NET_RAW")));
+            assert!(!run_args
+                .iter()
+                .any(|arg| arg.as_str().unwrap_or("").contains("NET_ADMIN")));
+            assert!(!run_args
+                .iter()
+                .any(|arg| arg.as_str().unwrap_or("").contains("NET_RAW")));
             // --privileged should remain
-            assert!(run_args.iter().any(|arg| arg.as_str().unwrap_or("") == "--privileged"));
+            assert!(run_args
+                .iter()
+                .any(|arg| arg.as_str().unwrap_or("") == "--privileged"));
         }
 
         // Check that firewall-related keys were removed
@@ -593,7 +632,9 @@ mod tests {
         fs::write(&json_path, json_content).unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let changes = customizer.strip_devcontainer_json_firewall(&json_path).unwrap();
+        let changes = customizer
+            .strip_devcontainer_json_firewall(&json_path)
+            .unwrap();
 
         assert!(changes.is_empty());
     }
@@ -630,7 +671,9 @@ ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
         fs::write(&dockerfile_path, dockerfile_content).unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let changes = customizer.strip_dockerfile_firewall(&dockerfile_path).unwrap();
+        let changes = customizer
+            .strip_dockerfile_firewall(&dockerfile_path)
+            .unwrap();
 
         assert!(!changes.is_empty());
         assert!(changes.iter().any(|c| c.contains("firewall packages")));
@@ -641,16 +684,46 @@ ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 
         // Check that firewall packages were removed from apt install
         // The packages should be completely removed from the lines
-        let apt_lines: Vec<&str> = modified_content.lines()
-            .filter(|line| line.contains("apt-get install") || (line.trim().len() > 0 && !line.starts_with("RUN") && !line.starts_with("FROM") && !line.starts_with("#") && !line.starts_with("USER") && !line.starts_with("ENV") && !line.starts_with("COPY")))
+        let apt_lines: Vec<&str> = modified_content
+            .lines()
+            .filter(|line| {
+                line.contains("apt-get install")
+                    || (!line.trim().is_empty()
+                        && !line.starts_with("RUN")
+                        && !line.starts_with("FROM")
+                        && !line.starts_with("#")
+                        && !line.starts_with("USER")
+                        && !line.starts_with("ENV")
+                        && !line.starts_with("COPY"))
+            })
             .collect();
 
         for line in apt_lines {
-            assert!(!line.contains("iptables"), "iptables should be removed from: {}", line);
-            assert!(!line.contains("ipset"), "ipset should be removed from: {}", line);
-            assert!(!line.contains("iproute2"), "iproute2 should be removed from: {}", line);
-            assert!(!line.contains("dnsutils"), "dnsutils should be removed from: {}", line);
-            assert!(!line.contains("aggregate"), "aggregate should be removed from: {}", line);
+            assert!(
+                !line.contains("iptables"),
+                "iptables should be removed from: {}",
+                line
+            );
+            assert!(
+                !line.contains("ipset"),
+                "ipset should be removed from: {}",
+                line
+            );
+            assert!(
+                !line.contains("iproute2"),
+                "iproute2 should be removed from: {}",
+                line
+            );
+            assert!(
+                !line.contains("dnsutils"),
+                "dnsutils should be removed from: {}",
+                line
+            );
+            assert!(
+                !line.contains("aggregate"),
+                "aggregate should be removed from: {}",
+                line
+            );
         }
 
         // Check that firewall setup section was removed
@@ -686,7 +759,9 @@ WORKDIR /app
         fs::write(&dockerfile_path, dockerfile_content).unwrap();
 
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let changes = customizer.strip_dockerfile_firewall(&dockerfile_path).unwrap();
+        let changes = customizer
+            .strip_dockerfile_firewall(&dockerfile_path)
+            .unwrap();
 
         assert!(changes.is_empty());
     }
@@ -697,7 +772,9 @@ WORKDIR /app
 
         // Test positive matches
         let firewall_content = "RUN apt-get install iptables ipset";
-        let matches = customizer.matches_firewall_patterns(firewall_content).unwrap();
+        let matches = customizer
+            .matches_firewall_patterns(firewall_content)
+            .unwrap();
         assert!(!matches.is_empty());
         assert!(matches.iter().any(|m| m.contains("iptables")));
         assert!(matches.iter().any(|m| m.contains("ipset")));
@@ -709,7 +786,9 @@ WORKDIR /app
 
         // Test capability matches
         let capability_content = r#"["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"]"#;
-        let matches = customizer.matches_firewall_patterns(capability_content).unwrap();
+        let matches = customizer
+            .matches_firewall_patterns(capability_content)
+            .unwrap();
         assert_eq!(matches.len(), 2);
     }
 
@@ -721,8 +800,12 @@ WORKDIR /app
         let empty_result = FirewallRemovalResult::new();
         let warnings = customizer.validate_firewall_removal(&empty_result);
         assert!(warnings.iter().any(|w| w.contains("No firewall scripts")));
-        assert!(warnings.iter().any(|w| w.contains("No firewall configurations found in Dockerfile")));
-        assert!(warnings.iter().any(|w| w.contains("No firewall configurations found in devcontainer.json")));
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("No firewall configurations found in Dockerfile")));
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("No firewall configurations found in devcontainer.json")));
 
         // Test with changes
         let mut result_with_changes = FirewallRemovalResult::new();
@@ -748,7 +831,9 @@ WORKDIR /app
         // Test with empty runArgs
         let json_content = r#"{"name": "Test", "runArgs": []}"#;
         fs::write(&json_path, json_content).unwrap();
-        let changes = customizer.strip_devcontainer_json_firewall(&json_path).unwrap();
+        let changes = customizer
+            .strip_devcontainer_json_firewall(&json_path)
+            .unwrap();
         assert!(changes.is_empty());
 
         // Test with mixed capabilities
@@ -757,7 +842,9 @@ WORKDIR /app
   "runArgs": ["--privileged", "--cap-add=NET_ADMIN", "--cap-add=SYS_ADMIN", "--cap-add=NET_RAW"]
 }"#;
         fs::write(&json_path, json_content).unwrap();
-        let changes = customizer.strip_devcontainer_json_firewall(&json_path).unwrap();
+        let changes = customizer
+            .strip_devcontainer_json_firewall(&json_path)
+            .unwrap();
         assert!(!changes.is_empty());
 
         // Verify only firewall capabilities were removed
@@ -765,10 +852,18 @@ WORKDIR /app
         let modified_json: serde_json::Value = serde_json::from_str(&modified_content).unwrap();
         let run_args = modified_json.get("runArgs").unwrap().as_array().unwrap();
 
-        assert!(run_args.iter().any(|arg| arg.as_str().unwrap() == "--privileged"));
-        assert!(run_args.iter().any(|arg| arg.as_str().unwrap() == "--cap-add=SYS_ADMIN"));
-        assert!(!run_args.iter().any(|arg| arg.as_str().unwrap().contains("NET_ADMIN")));
-        assert!(!run_args.iter().any(|arg| arg.as_str().unwrap().contains("NET_RAW")));
+        assert!(run_args
+            .iter()
+            .any(|arg| arg.as_str().unwrap() == "--privileged"));
+        assert!(run_args
+            .iter()
+            .any(|arg| arg.as_str().unwrap() == "--cap-add=SYS_ADMIN"));
+        assert!(!run_args
+            .iter()
+            .any(|arg| arg.as_str().unwrap().contains("NET_ADMIN")));
+        assert!(!run_args
+            .iter()
+            .any(|arg| arg.as_str().unwrap().contains("NET_RAW")));
     }
 
     #[test]
@@ -783,7 +878,9 @@ COPY . .
 "#;
         fs::write(&dockerfile_path, dockerfile_content).unwrap();
         let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-        let changes = customizer.strip_dockerfile_firewall(&dockerfile_path).unwrap();
+        let changes = customizer
+            .strip_dockerfile_firewall(&dockerfile_path)
+            .unwrap();
         assert!(changes.is_empty());
 
         // Test with firewall section but no packages
@@ -797,7 +894,9 @@ RUN chmod +x /usr/local/bin/init-firewall.sh
 USER node
 "#;
         fs::write(&dockerfile_path, dockerfile_content).unwrap();
-        let changes = customizer.strip_dockerfile_firewall(&dockerfile_path).unwrap();
+        let changes = customizer
+            .strip_dockerfile_firewall(&dockerfile_path)
+            .unwrap();
         assert!(changes.iter().any(|c| c.contains("firewall setup section")));
 
         // Verify firewall section was removed but other content preserved
@@ -862,7 +961,8 @@ mod property_tests {
             "postStartCommand.*firewall",
             "--cap-add=NET_ADMIN",
             "--cap-add=NET_RAW"
-        ].prop_map(|s| s.to_string())
+        ]
+        .prop_map(|s| s.to_string())
     }
 
     // Generator for non-firewall content
@@ -875,7 +975,8 @@ mod property_tests {
             "mkdir -p /app",
             "chmod +x script.sh",
             "apt-get install vim"
-        ].prop_map(|s| s.to_string())
+        ]
+        .prop_map(|s| s.to_string())
     }
 
     // Generator for devcontainer.json with firewall configurations
@@ -912,13 +1013,15 @@ mod property_tests {
     fn dockerfile_with_firewall_strategy() -> impl Strategy<Value = String> {
         (
             prop::collection::vec(firewall_content_strategy(), 1..3),
-            prop::collection::vec(non_firewall_content_strategy(), 1..3)
-        ).prop_map(|(_firewall_items, _non_firewall_items)| {
-            let firewall_packages = ["iptables", "ipset", "iproute2", "dnsutils", "aggregate"];
-            let mut apt_packages: Vec<String> = vec!["git".to_string(), "curl".to_string(), "vim".to_string()];
-            apt_packages.extend(firewall_packages.iter().map(|s| s.to_string()));
+            prop::collection::vec(non_firewall_content_strategy(), 1..3),
+        )
+            .prop_map(|(_firewall_items, _non_firewall_items)| {
+                let firewall_packages = ["iptables", "ipset", "iproute2", "dnsutils", "aggregate"];
+                let mut apt_packages: Vec<String> =
+                    vec!["git".to_string(), "curl".to_string(), "vim".to_string()];
+                apt_packages.extend(firewall_packages.iter().map(|s| s.to_string()));
 
-            let firewall_section = r#"
+                let firewall_section = r#"
 # Copy and set up firewall script
 COPY init-firewall.sh /usr/local/bin/
 USER root
@@ -927,7 +1030,8 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
 USER node
 "#;
 
-            format!(r#"FROM node:20
+                format!(
+                    r#"FROM node:20
 
 RUN apt-get update && apt-get install -y \
   {} \
@@ -935,10 +1039,10 @@ RUN apt-get update && apt-get install -y \
 {}
 ENV NODE_ENV=development
 "#,
-                apt_packages.join(" \\\n  "),
-                firewall_section
-            )
-        })
+                    apt_packages.join(" \\\n  "),
+                    firewall_section
+                )
+            })
     }
 
     proptest! {
@@ -1007,15 +1111,15 @@ ENV NODE_ENV=development
             fs::create_dir_all(&devcontainer_path).unwrap();
 
             // Create files without firewall configurations
-            let json_content = format!(r#"{{
+            let json_content = r#"{
   "name": "Clean Container",
   "image": "node:18",
-  "customizations": {{
-    "vscode": {{
+  "customizations": {
+    "vscode": {
       "extensions": ["ms-vscode.vscode-typescript-next"]
-    }}
-  }}
-}}"#);
+    }
+  }
+}"#;
 
             let dockerfile_content = format!(r#"FROM node:18
 RUN apt-get update && apt-get install -y git vim
@@ -1026,7 +1130,7 @@ WORKDIR /app
             let json_path = devcontainer_path.join("devcontainer.json");
             let dockerfile_path = devcontainer_path.join("Dockerfile");
 
-            fs::write(&json_path, &json_content).unwrap();
+            fs::write(&json_path, json_content).unwrap();
             fs::write(&dockerfile_path, &dockerfile_content).unwrap();
 
             let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
@@ -1065,7 +1169,7 @@ WORKDIR /app
             fs::write(&script_path, "#!/bin/bash\niptables -F\n").unwrap();
 
             let customizer = DefaultDevcontainerCustomizer::new(temp_dir.path().to_path_buf(), false);
-            let result = customizer.strip_firewall_features(&devcontainer_path).unwrap();
+            let _result = customizer.strip_firewall_features(&devcontainer_path).unwrap();
 
             // Property: After stripping, all non-firewall functionality should remain intact
             let modified_json = fs::read_to_string(&json_path).unwrap();

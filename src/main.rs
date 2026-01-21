@@ -50,7 +50,11 @@ fn main() {
 
     let result = match cli.command {
         Commands::Init { strip_firewall } => app.init(strip_firewall),
-        Commands::Update { backup, force, strip_firewall } => app.update(backup, force, strip_firewall),
+        Commands::Update {
+            backup,
+            force,
+            strip_firewall,
+        } => app.update(backup, force, strip_firewall),
         Commands::Remove { keep_files } => app.remove(keep_files),
     };
 

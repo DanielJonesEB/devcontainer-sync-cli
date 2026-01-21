@@ -193,7 +193,12 @@ impl CommandResult {
     }
 
     pub fn should_not_contain_in_stdout(&self, text: &str) -> &Self {
-        assert!(!self.stdout.contains(text), "stdout should not contain '{}' but it does: {}", text, self.stdout);
+        assert!(
+            !self.stdout.contains(text),
+            "stdout should not contain '{}' but it does: {}",
+            text,
+            self.stdout
+        );
         self
     }
 }
@@ -595,7 +600,11 @@ fn should_strip_firewall_when_flag_provided(
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
-    let result = run_command(&compiled_binary, &["init", "--strip-firewall", "--verbose"], &repo_path);
+    let result = run_command(
+        &compiled_binary,
+        &["init", "--strip-firewall", "--verbose"],
+        &repo_path,
+    );
 
     result.should_succeed();
     result.should_contain_in_stdout("Firewall stripping enabled");
@@ -667,7 +676,11 @@ fn should_strip_firewall_on_update_command(
     assert_that(&firewall_script.exists()).is_true();
 
     // Now update with firewall stripping
-    let update_result = run_command(&compiled_binary, &["update", "--strip-firewall", "--verbose"], &repo_path);
+    let update_result = run_command(
+        &compiled_binary,
+        &["update", "--strip-firewall", "--verbose"],
+        &repo_path,
+    );
     update_result.should_succeed();
     update_result.should_contain_in_stdout("Firewall stripping enabled");
     update_result.should_contain_in_stdout("Stripped firewall configurations");
@@ -712,12 +725,14 @@ fn should_show_warnings_when_no_firewall_found(
     let devcontainer_path = repo_path.join(".devcontainer");
     std::fs::write(
         devcontainer_path.join("devcontainer.json"),
-        r#"{"name": "Clean Container", "image": "node:18"}"#
-    ).unwrap();
+        r#"{"name": "Clean Container", "image": "node:18"}"#,
+    )
+    .unwrap();
     std::fs::write(
         devcontainer_path.join("Dockerfile"),
-        "FROM node:18\nRUN apt-get update && apt-get install -y git\n"
-    ).unwrap();
+        "FROM node:18\nRUN apt-get update && apt-get install -y git\n",
+    )
+    .unwrap();
 
     // Remove the firewall script if it exists
     let firewall_script = devcontainer_path.join("init-firewall.sh");
@@ -726,7 +741,11 @@ fn should_show_warnings_when_no_firewall_found(
     }
 
     // Now run update with firewall stripping - should show warnings about no firewall configs
-    let result = run_command(&compiled_binary, &["update", "--strip-firewall", "--verbose"], &repo_path);
+    let result = run_command(
+        &compiled_binary,
+        &["update", "--strip-firewall", "--verbose"],
+        &repo_path,
+    );
 
     // Should succeed but show warnings about no firewall configurations found
     result.should_succeed();
@@ -741,7 +760,11 @@ fn should_handle_graceful_degradation_with_partial_patterns(
 ) {
     let (_temp_dir, repo_path) = temp_git_repo_with_commits;
 
-    let result = run_command(&compiled_binary, &["init", "--strip-firewall", "--verbose"], &repo_path);
+    let result = run_command(
+        &compiled_binary,
+        &["init", "--strip-firewall", "--verbose"],
+        &repo_path,
+    );
     result.should_succeed();
 
     // Even if some patterns don't match, the command should succeed

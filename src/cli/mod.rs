@@ -177,7 +177,8 @@ impl CliApp {
                 io::stdout().flush().unwrap();
             }
 
-            let customizer = DefaultDevcontainerCustomizer::new(context.working_dir.clone(), context.verbose);
+            let customizer =
+                DefaultDevcontainerCustomizer::new(context.working_dir.clone(), context.verbose);
             let devcontainer_path = context.working_dir.join(DEVCONTAINER_PREFIX);
 
             match customizer.strip_firewall_features(&devcontainer_path) {
@@ -185,14 +186,19 @@ impl CliApp {
                     if result.has_changes() {
                         // Create a commit for the firewall customizations
                         let commit_message = "Strip firewall configurations from devcontainer";
-                        let changes: Vec<String> = result.dockerfile_changes.iter()
+                        let changes: Vec<String> = result
+                            .dockerfile_changes
+                            .iter()
                             .chain(result.json_changes.iter())
                             .cloned()
                             .collect();
 
                         if let Err(e) = customizer.commit_customizations(&changes, commit_message) {
                             if context.verbose {
-                                println!("Warning: Failed to commit firewall customizations: {}", e);
+                                println!(
+                                    "Warning: Failed to commit firewall customizations: {}",
+                                    e
+                                );
                             }
                         }
 
@@ -377,22 +383,29 @@ impl CliApp {
                 io::stdout().flush().unwrap();
             }
 
-            let customizer = DefaultDevcontainerCustomizer::new(context.working_dir.clone(), context.verbose);
+            let customizer =
+                DefaultDevcontainerCustomizer::new(context.working_dir.clone(), context.verbose);
             let devcontainer_path = context.working_dir.join(DEVCONTAINER_PREFIX);
 
             match customizer.strip_firewall_features(&devcontainer_path) {
                 Ok(result) => {
                     if result.has_changes() {
                         // Create a commit for the firewall customizations
-                        let commit_message = "Strip firewall configurations from updated devcontainer";
-                        let changes: Vec<String> = result.dockerfile_changes.iter()
+                        let commit_message =
+                            "Strip firewall configurations from updated devcontainer";
+                        let changes: Vec<String> = result
+                            .dockerfile_changes
+                            .iter()
                             .chain(result.json_changes.iter())
                             .cloned()
                             .collect();
 
                         if let Err(e) = customizer.commit_customizations(&changes, commit_message) {
                             if context.verbose {
-                                println!("Warning: Failed to commit firewall customizations: {}", e);
+                                println!(
+                                    "Warning: Failed to commit firewall customizations: {}",
+                                    e
+                                );
                             }
                         }
 
