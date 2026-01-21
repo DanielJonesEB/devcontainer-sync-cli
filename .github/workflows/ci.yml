@@ -78,6 +78,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
+      release_sha: ${{ steps.push.outputs.release_sha }}
 
     steps:
       - name: Checkout repository
@@ -114,9 +115,11 @@ jobs:
           git commit -m "chore: bump version to v${{ steps.bump.outputs.new_version }} [skip ci]"
 
       - name: Create and push tag
+        id: push
         run: |
           git tag "v${{ steps.bump.outputs.new_version }}"
           git push origin master --follow-tags
+          echo "release_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   build:
     name: Build Release Binaries
@@ -137,7 +140,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          ref: v${{ needs.release.outputs.new_version }}
+          ref: ${{ needs.release.outputs.release_sha }}
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
@@ -215,7 +218,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          ref: v${{ needs.release.outputs.new_version }}
+          ref: ${{ needs.release.outputs.release_sha }}
           fetch-depth: 0
 
       - name: Download all artifacts
