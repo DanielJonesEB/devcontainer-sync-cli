@@ -46,3 +46,7 @@ git subtree add --prefix=.devcontainer devcontainer --squash
 ```
 
 This CLI does all this fiddly-faff for you.
+
+## Releases
+
+Releases are automated. Every push to `master` that passes CI will automatically bump the patch version, create a tag, and publish a GitHub Release with binaries.

@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: CI and Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,6 +17,7 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
       - name: Checkout repository
@@ -69,3 +70,187 @@ jobs:
 
       - name: Check formatting
         run: cargo fmt --all -- --check
+
+  release:
+    name: Bump Version and Tag
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
+        with:
+          toolchain: stable
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          CURRENT=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          NEW=$(echo $CURRENT | awk -F. '{print $1"."$2"."$3+1}')
+          echo "Current version: $CURRENT"
+          echo "New version: $NEW"
+          sed -i "s/^version = \"$CURRENT\"/version = \"$NEW\"/" Cargo.toml
+          echo "new_version=$NEW" >> $GITHUB_OUTPUT
+
+      - name: Update Cargo.lock
+        run: cargo check --locked || cargo update
+
+      - name: Commit version bump
+        run: |
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore: bump version to v${{ steps.bump.outputs.new_version }} [skip ci]"
+
+      - name: Create and push tag
+        run: |
+          git tag "v${{ steps.bump.outputs.new_version }}"
+          git push origin master --follow-tags
+
+  build:
+    name: Build Release Binaries
+    runs-on: ${{ matrix.os }}
+    needs: release
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: v${{ needs.release.outputs.new_version }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7 # stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Verify Cargo.lock is up to date
+        run: cargo check --locked --target ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Build release binary
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary artifact
+        run: |
+          mkdir -p artifacts
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp target/${{ matrix.target }}/release/devcontainer-sync.exe artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}.exe
+            ls -la artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}.exe
+          else
+            cp target/${{ matrix.target }}/release/devcontainer-sync artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}
+            ls -la artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}
+            chmod +x artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}
+          fi
+
+      - name: Run smoke tests
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            BINARY="artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}.exe"
+          else
+            BINARY="artifacts/devcontainer-sync-v${{ needs.release.outputs.new_version }}-${{ matrix.target }}"
+          fi
+
+          echo "Testing binary execution..."
+          $BINARY --help
+
+          echo "Testing version output..."
+          $BINARY --version
+
+          echo "Testing invalid command handling..."
+          if $BINARY invalid-command 2>/dev/null; then
+            echo "ERROR: Binary should fail on invalid command"
+            exit 1
+          else
+            echo "SUCCESS: Binary correctly handles invalid commands"
+          fi
+
+          echo "Smoke tests passed for ${{ matrix.target }}"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        with:
+          name: devcontainer-sync-${{ matrix.target }}
+          path: artifacts/*
+          retention-days: 1
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [release, build]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: v${{ needs.release.outputs.new_version }}
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -name "devcontainer-sync-*" -type f -exec cp {} release-assets/ \;
+          ls -la release-assets/
+
+      - name: Generate release notes
+        run: |
+          VERSION="v${{ needs.release.outputs.new_version }}"
+          echo "## Release $VERSION" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### Changes" >> release_notes.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD^ >> release_notes.md || echo "- Initial release" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Downloads" >> release_notes.md
+          echo "Choose the appropriate binary for your platform:" >> release_notes.md
+          echo "- **Linux x86_64**: \`devcontainer-sync-$VERSION-x86_64-unknown-linux-gnu\`" >> release_notes.md
+          echo "- **macOS x86_64**: \`devcontainer-sync-$VERSION-x86_64-apple-darwin\`" >> release_notes.md
+          echo "- **macOS ARM64**: \`devcontainer-sync-$VERSION-aarch64-apple-darwin\`" >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
+        with:
+          tag_name: v${{ needs.release.outputs.new_version }}
+          name: Release v${{ needs.release.outputs.new_version }}
+          body_path: release_notes.md
+          files: release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
